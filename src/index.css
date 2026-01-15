@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ARD PÁDEL - Professional Brand Palette */
+    --background: 222 47% 4%;
+    --foreground: 158 33% 98%;
+
+    --card: 222 47% 7%;
+    --card-foreground: 158 33% 98%;
+
+    --popover: 222 47% 5%;
+    --popover-foreground: 158 33% 98%;
+
+    /* Emerald Green from Logo */
+    --primary: 158 100% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Deep Navy from Logo background */
+    --secondary: 222 47% 12%;
+    --secondary-foreground: 158 33% 90%;
+
+    --muted: 222 47% 12%;
+    --muted-foreground: 158 20% 65%;
+
+    /* Gold from Paddles */
+    --accent: 46 88% 52%;
+    --accent-foreground: 222 47% 4%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 30% 15%;
+    --input: 222 30% 15%;
+    --ring: 158 100% 35%;
+
+    --radius: 1rem;
+
+    /* Semantic court colors */
+    --court-green: 158 100% 35%;
+    --court-green-dark: 158 100% 20%;
+    --court-green-glow: 158 100% 35% / 0.15;
+
+    --winner-gold: 46 88% 52%;
+    --winner-gold-glow: 46 88% 52% / 0.2;
+
+    /* Shadows & Glows */
+    --glow-primary: 0 0 20px -5px hsl(var(--primary));
+    --glow-accent: 0 0 20px -5px hsl(var(--accent));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-card/60 backdrop-blur-md border border-white/5 shadow-2xl;
+  }
+
+  .tournament-card {
+    @apply relative overflow-hidden bg-card/40 backdrop-blur-sm rounded-2xl p-6 border border-white/5 transition-all duration-500;
+  }
+
+  .tournament-card:hover {
+    @apply border-primary/30 -translate-y-1;
+    box-shadow: 0 20px 40px -20px hsl(var(--primary) / 0.3);
+  }
+
+  .tournament-card::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-500 pointer-events-none;
+  }
+
+  .tournament-card:hover::before {
+    @apply opacity-100;
+  }
+
+  .match-card {
+    @apply bg-secondary/30 rounded-xl p-4 border border-white/5 transition-all duration-300;
+  }
+
+  .match-card:hover {
+    @apply border-primary/20 bg-secondary/50;
+  }
+
+  .btn-primary-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--court-green-dark)));
+    @apply text-white font-bold rounded-full transition-all duration-300 shadow-lg relative overflow-hidden border border-white/10;
+  }
+
+  .btn-primary-gradient:hover {
+    @apply scale-[1.02] shadow-primary/30;
+    box-shadow: var(--glow-primary);
+  }
+
+  .btn-primary-gradient::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full skew-x-12 transition-transform duration-700 ease-in-out;
+  }
+
+  .btn-primary-gradient:hover::after {
+    @apply translate-x-[200%];
+  }
+
+  .input-sport {
+    @apply w-full px-5 py-4 rounded-xl border border-white/10 bg-white/5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-white/10 transition-all duration-300 placeholder:text-muted-foreground/50 relative z-10 cursor-text;
+  }
+
+  .stat-card {
+    @apply glass p-5 rounded-2xl text-center border-b-4 border-b-primary/50;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulseSoft {
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 2s ease-in-out infinite;
+  }
+
+  @keyframes mouse-wheel {
+    0% {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+
+    50% {
+      opacity: 1;
+      transform: translateY(2px);
+    }
+
+    100% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  .animate-mouse-wheel {
+    animation: mouse-wheel 1.5s ease-in-out infinite;
+  }
+}

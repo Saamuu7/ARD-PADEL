@@ -81,6 +81,7 @@ export interface Tournament {
   bracket: BracketMatch[];
   phase: 'registration' | 'groups' | 'bracket' | 'finished';
   champion?: string;
+  finishedAt?: number;
 }
 
 export type TournamentPhase = Tournament['phase'];

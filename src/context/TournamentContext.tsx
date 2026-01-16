@@ -116,16 +116,33 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
                     groups: internalData.groups || [],
                     bracket: internalData.bracket || [],
                     phase: internalData.phase || 'registration',
-                    champion: internalData.champion
+                    champion: internalData.champion,
+                    finishedAt: internalData.finishedAt
                 };
             });
 
-            setTournaments(mappedTournaments);
+            // 4. Auto-delete expired tournaments (> 24h)
+            const now = Date.now();
+            const validTournaments: Tournament[] = [];
 
-            if (mappedTournaments.length > 0 && !activeTournamentId) {
-                setActiveTournamentId(mappedTournaments[0].id);
-            } else if (activeTournamentId && !mappedTournaments.find(t => t.id === activeTournamentId)) {
-                setActiveTournamentId(mappedTournaments.length > 0 ? mappedTournaments[0].id : null);
+            for (const t of mappedTournaments) {
+                if (t.phase === 'finished' && t.finishedAt) {
+                    const hoursSinceFinish = (now - t.finishedAt) / (1000 * 60 * 60);
+                    if (hoursSinceFinish >= 24) {
+                        // Delete from DB
+                        await supabase.from('tournaments').delete().eq('id', parseInt(t.id));
+                        continue; // Do not add to state
+                    }
+                }
+                validTournaments.push(t);
+            }
+
+            setTournaments(validTournaments);
+
+            if (validTournaments.length > 0 && !activeTournamentId) {
+                setActiveTournamentId(validTournaments[0].id);
+            } else if (activeTournamentId && !validTournaments.find(t => t.id === activeTournamentId)) {
+                setActiveTournamentId(validTournaments.length > 0 ? validTournaments[0].id : null);
             }
 
         } catch (err) {
@@ -153,7 +170,8 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
             phase: updatedTournament.phase,
             groups: updatedTournament.groups,
             bracket: updatedTournament.bracket,
-            champion: updatedTournament.champion
+            champion: updatedTournament.champion,
+            finishedAt: updatedTournament.finishedAt
         };
 
         const { error } = await supabase
@@ -408,7 +426,8 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
 
         const updatedTournament: Tournament = {
             ...activeTournament,
-            phase: 'finished'
+            phase: 'finished',
+            finishedAt: Date.now()
         };
         await saveTournamentInternal(updatedTournament);
         toast.success("Torneo finalizado oficialmente");

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Trophy, Calendar, Clock, MapPin, Users, ArrowRight, Instagram, Mail, Phone, ChevronRight, Zap, Trophy as TrophyIcon, Star, Target, ShieldCheck, Crown, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
@@ -11,7 +11,20 @@ const Index: React.FC = () => {
   const { tournaments, activeTournament, setActiveTournament } = useTournament();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoginOpen, setIsLoginOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (location.hash) {
+      const element = document.getElementById(location.hash.replace('#', ''));
+      if (element) {
+        // Small delay to ensure smooth scroll after render
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [location]);
 
   const handleRegistration = (tournamentId: string) => {
     setActiveTournament(tournamentId);
@@ -402,7 +415,7 @@ const Index: React.FC = () => {
         <div className="absolute inset-0 bg-primary/5 opacity-20 skew-y-3 translate-y-32" />
         <div className="container mx-auto px-4 text-center relative z-10">
           <div className="flex items-center justify-center gap-6 mb-12">
-            <img src="/logo.png" alt="ARD PADEL" className="w-20 h-20 object-contain" />
+            <img src="/logo.png" alt="ARD PADEL" className="w-20 h-20 object-contain rounded-full border-2 border-primary p-1 bg-black/20" />
             <div className="text-left">
               <span className="font-display font-black text-5xl tracking-tighter uppercase block leading-none text-white">ARD <span className="text-primary italic">PÁDEL</span></span>
               <span className="text-[10px] uppercase font-black tracking-[1em] text-white/20 mt-2 block">Professional DNA</span>
@@ -410,9 +423,9 @@ const Index: React.FC = () => {
           </div>
 
           <div className="flex justify-center gap-16 text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-16">
-            <a href="#" className="hover:text-primary transition-all">Reglamento</a>
-            <a href="#" className="hover:text-primary transition-all">Privacidad</a>
-            <a href="#" className="hover:text-primary transition-all">Prensa</a>
+            <Link to="/reglamento" className="hover:text-primary transition-all">Reglamento</Link>
+            <Link to="/privacidad" className="hover:text-primary transition-all">Privacidad</Link>
+            <Link to="/cookies" className="hover:text-primary transition-all">Cookies</Link>
           </div>
 
           <div className="pt-10 border-t border-white/5 inline-block">

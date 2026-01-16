@@ -3,13 +3,16 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const ProtectedRoute: React.FC = () => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    // Check sessionStorage instead of localStorage for per-session security
+    const isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true';
     const location = useLocation();
 
     useEffect(() => {
         if (!isAuthenticated) {
             toast.error('Acceso denegado: Inicia sesión primero 🔒');
         }
+        // Cleanup potential old persistent session
+        localStorage.removeItem('isAuthenticated');
     }, [isAuthenticated]);
 
     if (!isAuthenticated) {

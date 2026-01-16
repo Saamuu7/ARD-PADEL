@@ -13,9 +13,13 @@ import Cuadro from "./pages/Cuadro";
 import Gestion from "./pages/Gestion";
 import NotFound from "./pages/NotFound";
 import PublicRegistration from "./pages/PublicRegistration";
-
 import Login from "./pages/Login";
+import Reglamento from "./pages/Reglamento";
+import Privacidad from "./pages/Privacidad";
+import Cookies from "./pages/Cookies";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
+import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -26,11 +30,17 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <CookieConsent />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/inscripcion" element={<PublicRegistration />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/reglamento" element={<Reglamento />} />
+              <Route path="/privacidad" element={<Privacidad />} />
+              <Route path="/cookies" element={<Cookies />} />
 
               {/* Tournament Routes nested under /organizador - Protected */}
               <Route path="/organizador" element={<ProtectedRoute />}>
@@ -39,7 +49,7 @@ const App = () => (
                 <Route path="grupos" element={<Grupos />} />
                 <Route path="cuadro" element={<Cuadro />} />
                 <Route path="panel-de-control" element={<Gestion />} />
-                <Route path="dashboard" element={<Organizador />} /> {/* Keep Organizador page at dashboard if needed, or redirect */}
+                <Route path="dashboard" element={<Organizador />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

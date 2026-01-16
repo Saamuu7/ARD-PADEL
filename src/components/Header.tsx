@@ -31,24 +31,33 @@ const Header: React.FC = () => {
   const [hasUnread, setHasUnread] = useState(false);
 
   useEffect(() => {
-    if (myRegistrations.length === 0) return;
+    if (myRegistrations.length === 0 || !user) return;
 
-    const signature = myRegistrations.map(r => `${r.id}-${r.status}`).join('|');
-    const storedSignature = localStorage.getItem('ard_padel_notifications_sig');
+    // Sort registrations to ensure stable signature regardless of fetch order
+    const sortedRegistrations = [...myRegistrations].sort((a, b) => a.id.localeCompare(b.id));
+    const signature = sortedRegistrations.map(r => `${r.id}-${r.status}`).join('|');
+
+    // key by user ID to avoid conflicts on shared devices
+    const storageKey = `ard_padel_notifications_sig_${user.id}`;
+    const storedSignature = localStorage.getItem(storageKey);
 
     if (signature !== storedSignature) {
       setHasUnread(true);
     }
-  }, [myRegistrations]); // Deep comparison mainly on length or status change if triggering re-render
+  }, [myRegistrations, user]);
 
   const handleToggleNotifications = () => {
     const newState = !isNotificationsOpen;
     setIsNotificationsOpen(newState);
 
-    if (newState && myRegistrations.length > 0) {
+    if (newState && myRegistrations.length > 0 && user) {
       setHasUnread(false);
-      const signature = myRegistrations.map(r => `${r.id}-${r.status}`).join('|');
-      localStorage.setItem('ard_padel_notifications_sig', signature);
+
+      const sortedRegistrations = [...myRegistrations].sort((a, b) => a.id.localeCompare(b.id));
+      const signature = sortedRegistrations.map(r => `${r.id}-${r.status}`).join('|');
+
+      const storageKey = `ard_padel_notifications_sig_${user.id}`;
+      localStorage.setItem(storageKey, signature);
     }
   };
 
@@ -61,18 +70,26 @@ const Header: React.FC = () => {
     ]
     : [
       { path: '/', label: 'Inicio', icon: Trophy },
-      { path: '#torneos', label: 'Torneos', icon: Calendar },
-      { path: '#sobre-nosotros', label: 'Sobre Nosotros', icon: Users },
+      { path: '/#torneos', label: 'Torneos', icon: Calendar },
+      { path: '/#sobre-nosotros', label: 'Sobre Nosotros', icon: Users },
     ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
-    if (path.startsWith('#')) {
-      e.preventDefault();
-      const element = document.getElementById(path.substring(1));
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-        setIsMenuOpen(false);
+    // Check if it's a hash link for the home page sections
+    if (path.includes('#')) {
+      const hash = path.split('#')[1];
+
+      // If we are already on the home page, scroll smoothly
+      if (location.pathname === '/' || location.pathname === '') {
+        e.preventDefault();
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+          setIsMenuOpen(false);
+        }
       }
+      // If we are NOT on home page, the Link component will handle standard navigation to '/#hash'
+      // and the Index page's useEffect will handle the scrolling upon mounting.
     }
   };
 
@@ -98,7 +115,7 @@ const Header: React.FC = () => {
               <img
                 src="/logo.png"
                 alt="ARD PADEL"
-                className="w-16 h-16 object-contain relative z-10 transition-transform duration-500 group-hover:scale-110"
+                className="w-16 h-16 object-contain rounded-full border-2 border-primary p-1 bg-black/20 relative z-10 transition-transform duration-500 group-hover:scale-110"
               />
             </div>
             <div className="hidden sm:block text-left">

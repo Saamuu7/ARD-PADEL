@@ -6,7 +6,7 @@ import RegistrationManager from '@/components/RegistrationManager';
 import { useTournament } from '@/context/TournamentContext';
 
 const Gestion: React.FC = () => {
-    const { activeTournament: tournament, refreshTournaments } = useTournament();
+    const { activeTournament: tournament, refreshTournaments, debugGenerateTeams } = useTournament();
 
     useEffect(() => {
         refreshTournaments();
@@ -103,6 +103,21 @@ const Gestion: React.FC = () => {
                                 <p className="text-muted-foreground">
                                     Crea un torneo para comenzar a gestionar inscripciones y partidos.
                                 </p>
+                            </div>
+                        )}
+
+                        {tournament && tournament.phase === 'registration' && (
+                            <div className="mt-8">
+                                <button
+                                    onClick={() => {
+                                        if (confirm('¿Generar 16 parejas de prueba (8 de cada nivel)?')) {
+                                            debugGenerateTeams();
+                                        }
+                                    }}
+                                    className="w-full py-4 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-xl font-bold uppercase tracking-widest hover:bg-yellow-500/20 transition-colors text-xs"
+                                >
+                                    ⚠️ Generar Datos de Prueba
+                                </button>
                             </div>
                         )}
                     </div>

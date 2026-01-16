@@ -20,6 +20,7 @@ import Cookies from "./pages/Cookies";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import CookieConsent from "./components/CookieConsent";
+import TorneoActivo from "./pages/TorneoActivo";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/reglamento" element={<Reglamento />} />
               <Route path="/privacidad" element={<Privacidad />} />
               <Route path="/cookies" element={<Cookies />} />
+              <Route path="/competicion" element={<TorneoActivo />} />
 
               {/* Tournament Routes nested under /organizador - Protected */}
               <Route path="/organizador" element={<ProtectedRoute />}>

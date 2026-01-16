@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Play, Plus, Trash2, Calendar, Clock, AlignLeft, Trophy, Lock, Unlock, Users, Layers, Star, Image as ImageIcon, Upload } from 'lucide-react';
+import { Settings, Play, Plus, Trash2, Calendar, Clock, Trophy, Lock, Unlock, Users, Layers, Image as ImageIcon, Upload, Sparkles, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTournament } from '@/context/TournamentContext';
-import { TournamentConfig as TournamentConfigType } from '@/types/tournament';
+import { TournamentConfig as TournamentConfigType, CategoryConfig } from '@/types/tournament';
 import { toast } from 'sonner';
 
 const initialConfig: TournamentConfigType = {
@@ -16,6 +16,7 @@ const initialConfig: TournamentConfigType = {
   qualifyThird: false,
   numberOfThirdQualifiers: 0,
   registrationClosed: false,
+  categorySettings: {}
 };
 
 const TournamentConfigComponent: React.FC = () => {
@@ -24,17 +25,23 @@ const TournamentConfigComponent: React.FC = () => {
     activeTournament,
     createTournament,
     generateGroups,
-    generateFinalBracket,
     deleteTournament,
     updateTournamentConfig,
     setActiveTournament,
-    finishTournament
+    finishTournament,
+    generateFinalBracket
   } = useTournament();
 
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showGenerationSettings, setShowGenerationSettings] = useState(false);
   const [config, setConfig] = useState<TournamentConfigType>(initialConfig);
+
+  // State for category-specific wizard
+  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
+  const categories = activeTournament
+    ? Array.from(new Set(activeTournament.teams.filter(t => t.status === 'approved').map(t => t.category || 'General')))
+    : [];
 
   useEffect(() => {
     if (tournaments.length === 0) {
@@ -78,11 +85,31 @@ const TournamentConfigComponent: React.FC = () => {
   const handleGenerateGroups = async () => {
     if (!activeTournament) return;
 
-    // Save settings before generating
+    // Save final settings (including category-specific ones) before generating
     await updateTournamentConfig(config);
-    await generateGroups();
+    await generateGroups(config);
     setShowGenerationSettings(false);
     toast.success("Grupos generados correctamente");
+  };
+
+  const updateCategoryConfig = (catName: string, updates: Partial<CategoryConfig>) => {
+    setConfig(prev => {
+      const currentSettings = prev.categorySettings || {};
+      const catConfig = currentSettings[catName] || {
+        numberOfGroups: prev.numberOfGroups,
+        qualifyFirst: prev.qualifyFirst,
+        qualifyThird: prev.qualifyThird,
+        numberOfThirdQualifiers: prev.numberOfThirdQualifiers
+      };
+
+      return {
+        ...prev,
+        categorySettings: {
+          ...currentSettings,
+          [catName]: { ...catConfig, ...updates }
+        }
+      };
+    });
   };
 
   const renderCreationForm = () => (
@@ -192,65 +219,173 @@ const TournamentConfigComponent: React.FC = () => {
     </div>
   );
 
-  const renderGenerationSettings = () => (
-    <div className="space-y-8 animate-fade-in bg-secondary/30 p-8 rounded-[2.5rem] border border-primary/20 shadow-2xl">
-      <div className="flex items-center gap-4 mb-2">
-        <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
-          <Layers className="w-6 h-6 text-primary" />
-        </div>
-        <div>
-          <h3 className="text-2xl font-black uppercase tracking-tight">Configurar Competición</h3>
-          <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Define la estructura antes de generar los grupos</p>
-        </div>
-      </div>
+  const renderGenerationSettings = () => {
+    const currentCat = categories[currentCategoryIndex];
+    if (!currentCat) return null;
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="space-y-6">
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-3 block flex items-center gap-2">
-              <Users className="w-3 h-3" /> Capacidad de Parejas
-            </label>
-            <select className="input-sport" value={config.totalTeams} onChange={e => setConfig(prev => ({ ...prev, totalTeams: parseInt(e.target.value) }))}>
-              {[8, 12, 16, 24, 32].map(n => <option key={n} value={n}>{n} parejas</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-3 block flex items-center gap-2">
-              <Layers className="w-3 h-3" /> Distribución de Grupos
-            </label>
-            <select className="input-sport" value={config.numberOfGroups} onChange={e => setConfig(prev => ({ ...prev, numberOfGroups: parseInt(e.target.value) }))}>
-              {[2, 4, 6, 8].map(n => <option key={n} value={n}>{n} grupos</option>)}
-            </select>
-          </div>
-        </div>
+    const catTeamsCount = activeTournament?.teams.filter(t => t.status === 'approved' && (t.category || 'General') === currentCat).length || 0;
 
-        <div className="space-y-6">
-          <div className="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Reglas de Clasificación</h4>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Clasifican por grupo</span>
-              <select className="bg-transparent border-b border-primary text-primary font-bold focus:outline-none" value={config.qualifyFirst} onChange={e => setConfig(prev => ({ ...prev, qualifyFirst: parseInt(e.target.value) }))}>
-                {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
+    // Get current settings for this category
+    const catConfig = (config.categorySettings && config.categorySettings[currentCat]) || {
+      numberOfGroups: config.numberOfGroups,
+      qualifyFirst: config.qualifyFirst,
+      qualifyThird: config.qualifyThird,
+      numberOfThirdQualifiers: config.numberOfThirdQualifiers
+    };
+
+    const isLastCategory = currentCategoryIndex === categories.length - 1;
+
+    return (
+      <div className="space-y-8 animate-fade-in bg-[#0a0a0a] p-8 md:p-12 rounded-[3rem] border border-primary/20 shadow-2xl relative overflow-hidden">
+        {/* Background Decorative */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] -z-10" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_20px_rgba(25,231,142,0.1)]">
+              <Layers className="w-7 h-7 text-primary" />
             </div>
-            <label className="flex items-center gap-3 cursor-pointer group">
-              <input type="checkbox" checked={config.qualifyThird} onChange={e => setConfig(prev => ({ ...prev, qualifyThird: e.target.checked }))} className="w-5 h-5 rounded-lg border-white/10 bg-white/5 text-primary focus:ring-primary" />
-              <span className="text-xs font-black uppercase tracking-widest text-white/60 group-hover:text-primary transition-colors">¿Incluir mejores terceros?</span>
-            </label>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+                  Paso {currentCategoryIndex + 1} de {categories.length}
+                </span>
+              </div>
+              <h3 className="text-3xl font-black uppercase tracking-tight text-white flex items-center gap-3">
+                Configurar: <span className="text-primary italic">{currentCat}</span>
+              </h3>
+            </div>
+          </div>
+
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+            <Users className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Parejas Aprobadas</p>
+              <p className="text-xl font-black text-white">{catTeamsCount}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex gap-4">
-        <Button onClick={handleGenerateGroups} className="flex-1 btn-primary-gradient py-8 text-lg font-black uppercase tracking-widest shadow-2xl shadow-primary/20">
-          <Play className="w-6 h-6 mr-3" /> Confirmar y Empezar Torneo
-        </Button>
-        <Button variant="ghost" className="px-8 border border-white/10 font-black uppercase tracking-widest text-xs" onClick={() => setShowGenerationSettings(false)}>
-          Atrás
-        </Button>
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Group Count */}
+          <div className="space-y-6">
+            <div className="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-4 hover:border-primary/20 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Layers className="w-4 h-4 text-primary" />
+                </div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-white/60">Distribución</h4>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-white/40 block">Número de Grupos</label>
+                <select
+                  className="input-sport"
+                  value={catConfig.numberOfGroups}
+                  onChange={e => updateCategoryConfig(currentCat, { numberOfGroups: parseInt(e.target.value) })}
+                >
+                  {[1, 2, 3, 4, 6, 8].map(n => <option key={n} value={n}>{n} {n === 1 ? 'grupo' : 'grupos'}</option>)}
+                </select>
+                <p className="text-[9px] text-white/20 italic mt-2">
+                  ~ {Math.ceil(catTeamsCount / (catConfig.numberOfGroups || 1))} parejas por grupo
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Classification Rules */}
+          <div className="space-y-6">
+            <div className="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-4 hover:border-primary/20 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                </div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-white/60">Clasificación</h4>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl">
+                  <span className="text-sm font-medium text-white/80 text-xs uppercase tracking-wider">Pasan por grupo</span>
+                  <select
+                    className="bg-transparent border-b border-primary text-primary font-bold focus:outline-none px-2"
+                    value={catConfig.qualifyFirst}
+                    onChange={e => updateCategoryConfig(currentCat, { qualifyFirst: parseInt(e.target.value) })}
+                  >
+                    {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl hover:bg-white/5 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={catConfig.qualifyThird}
+                      onChange={e => updateCategoryConfig(currentCat, { qualifyThird: e.target.checked })}
+                      className="w-5 h-5 rounded-lg border-white/10 bg-white/5 text-primary focus:ring-primary"
+                    />
+                    <span className="text-xs font-black uppercase tracking-widest text-white/60 group-hover:text-primary transition-colors">¿Incluir mejores terceros?</span>
+                  </label>
+
+                  {catConfig.qualifyThird && (
+                    <div className="pt-2 pl-8 border-l border-primary/20 animate-fade-in space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-white/40 block">Nº de Terceros</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="16"
+                        className="input-sport h-10 py-1 text-center font-bold text-primary"
+                        value={catConfig.numberOfThirdQualifiers}
+                        onChange={e => updateCategoryConfig(currentCat, { numberOfThirdQualifiers: parseInt(e.target.value) || 0 })}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Wizard Navigation */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-8 mt-4 border-t border-white/5">
+          {currentCategoryIndex > 0 && (
+            <Button
+              variant="outline"
+              className="px-8 border border-white/10 font-black uppercase tracking-widest text-[10px] py-7"
+              onClick={() => setCurrentCategoryIndex(prev => prev - 1)}
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" /> Atrás
+            </Button>
+          )}
+
+          {isLastCategory ? (
+            <Button
+              onClick={handleGenerateGroups}
+              className="flex-1 btn-primary-gradient py-7 text-sm font-black uppercase tracking-widest shadow-2xl shadow-primary/20"
+            >
+              <Trophy className="w-5 h-5 mr-3" /> Terminar y Generar Todo
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setCurrentCategoryIndex(prev => prev + 1)}
+              className="flex-1 btn-primary-gradient py-7 text-sm font-black uppercase tracking-widest"
+            >
+              Siguiente Categoría <ChevronRight className="w-5 h-5 ml-3" />
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            className="px-8 border border-white/5 text-white/20 font-black uppercase tracking-widest text-[9px]"
+            onClick={() => {
+              setShowGenerationSettings(false);
+              setCurrentCategoryIndex(0);
+            }}
+          >
+            Cancelar Sorteo
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -317,8 +452,24 @@ const TournamentConfigComponent: React.FC = () => {
                         <><Lock className="w-6 h-6 mr-3" /> Cerrar Inscripciones</>
                       )}
                     </Button>
-                    <Button onClick={() => setShowGenerationSettings(true)} className="btn-primary-gradient py-8 text-lg font-black uppercase tracking-widest">
-                      <Play className="w-6 h-6 mr-3" /> Generar Cuadro y Grupos
+                    <Button
+                      onClick={() => {
+                        if (!activeTournament.config.registrationClosed) {
+                          toast.error("¡Debes CERRAR las inscripciones antes de generar los grupos!");
+                          return;
+                        }
+                        const approvedHeader = activeTournament.teams.filter(t => t.status === 'approved').length;
+                        setConfig(prev => ({
+                          ...prev,
+                          totalTeams: approvedHeader,
+                          categorySettings: activeTournament.config.categorySettings || {}
+                        }));
+                        setCurrentCategoryIndex(0);
+                        setShowGenerationSettings(true);
+                      }}
+                      className="btn-primary-gradient py-8 text-lg font-black uppercase tracking-widest"
+                    >
+                      <Play className="w-6 h-6 mr-3" /> Configurar Sorteo por Niveles
                     </Button>
                   </>
                 )}

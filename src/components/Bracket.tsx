@@ -8,9 +8,10 @@ interface BracketProps {
   teams: Team[];
   onMatchUpdate: (matchId: string, result: MatchResult) => void;
   champion?: string;
+  readOnly?: boolean;
 }
 
-const Bracket: React.FC<BracketProps> = ({ matches, teams, onMatchUpdate, champion }) => {
+const Bracket: React.FC<BracketProps> = ({ matches, teams, onMatchUpdate, champion, readOnly = false }) => {
   const getTeam = (teamId: string) => teams.find(t => t.id === teamId);
 
   // Group matches by level/category
@@ -57,7 +58,7 @@ const Bracket: React.FC<BracketProps> = ({ matches, teams, onMatchUpdate, champi
           return acc;
         }, {} as Record<string, BracketMatch[]>);
 
-        const roundOrder = ['Octavos', 'Cuartos', 'Semifinal', 'Final'];
+        const roundOrder = ['Dieciseisavos', 'Octavos', 'Cuartos', 'Semifinal', 'Final'];
         const sortedRounds = Object.keys(rounds).sort((a, b) => {
           const aIndex = roundOrder.indexOf(a);
           const bIndex = roundOrder.indexOf(b);
@@ -103,6 +104,7 @@ const Bracket: React.FC<BracketProps> = ({ matches, teams, onMatchUpdate, champi
                                 team2={match.team2Id ? getTeam(match.team2Id) : undefined}
                                 onResultSubmit={(result) => onMatchUpdate(match.id, result)}
                                 matchNumber={(match.position || 0) + 1}
+                                readOnly={readOnly}
                               />
                             </div>
                             {roundIndex < sortedRounds.length - 1 && (

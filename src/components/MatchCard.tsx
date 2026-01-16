@@ -10,9 +10,10 @@ interface MatchCardProps {
   team2?: Team;
   onResultSubmit: (result: MatchResult) => void;
   matchNumber?: number;
+  readOnly?: boolean;
 }
 
-const MatchCard: React.FC<MatchCardProps> = ({ match, team1, team2, onResultSubmit, matchNumber }) => {
+const MatchCard: React.FC<MatchCardProps> = ({ match, team1, team2, onResultSubmit, matchNumber, readOnly = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [sets, setSets] = useState<SetScore[]>([
     { team1: 0, team2: 0 },
@@ -21,6 +22,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, team1, team2, onResultSubm
   ]);
 
   const handleEditClick = () => {
+    if (readOnly) return;
     if (match.result?.sets) {
       // Pad with empty sets if less than 3
       const currentSets = [...match.result.sets];
@@ -106,9 +108,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, team1, team2, onResultSubm
             }`}>
             {team1Name}
           </span>
-          {match.result?.winner === match.team1Id && (
-            <Trophy className="w-4 h-4 text-primary" />
-          )}
+
         </div>
 
         <div className="flex items-center gap-3">
@@ -123,20 +123,18 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, team1, team2, onResultSubm
             }`}>
             {team2Name}
           </span>
-          {match.result?.winner === match.team2Id && (
-            <Trophy className="w-4 h-4 text-primary" />
-          )}
+
         </div>
       </div>
 
       {/* Result Input */}
-      {team1 && team2 && !isEditing && (
+      {team1 && team2 && !isEditing && !readOnly && (
         <Button
           onClick={handleEditClick}
           variant={match.status === 'finished' ? "ghost" : "outline"}
           className={`w-full mt-4 text-[10px] font-black uppercase tracking-widest transition-all duration-300 py-6 ${match.status === 'finished'
-              ? 'text-white/40 hover:text-primary hover:bg-primary/10'
-              : 'border-white/10 hover:bg-primary/10 hover:border-primary/20 hover:text-primary'
+            ? 'text-white/40 hover:text-primary hover:bg-primary/10'
+            : 'border-white/10 hover:bg-primary/10 hover:border-primary/20 hover:text-primary'
             }`}
         >
           {match.status === 'finished' ? (

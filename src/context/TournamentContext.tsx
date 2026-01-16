@@ -13,7 +13,7 @@ interface TournamentContextType {
     registerTeam: (data: { player1Id: string; player2Id: string; category?: string; status?: string }) => Promise<string | null>;
     updateTeam: (teamId: string, updates: Partial<Team>) => Promise<void>;
     removeTeam: (teamId: string) => Promise<void>;
-    generateGroups: () => Promise<void>;
+    generateGroups: (configOverride?: Partial<TournamentConfig>) => Promise<void>;
     updateMatchResult: (groupId: string, matchId: string, result: MatchResult) => Promise<void>;
     generateFinalBracket: () => Promise<void>;
     updateBracketMatch: (matchId: string, result: MatchResult) => Promise<void>;
@@ -23,6 +23,8 @@ interface TournamentContextType {
     resetTournaments: () => Promise<void>;
     refreshTournaments: () => Promise<void>;
     finishTournament: () => Promise<void>;
+    debugGenerateTeams: () => Promise<void>;
+    debugGenerateResults: () => Promise<void>;
 }
 
 const TournamentContext = createContext<TournamentContextType | undefined>(undefined);
@@ -41,56 +43,64 @@ interface TournamentProviderProps {
 
 export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children }) => {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
-    const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
+    const [activeTournamentId, setActiveTournamentId] = useState<string | null>(() => {
+        try {
+            return localStorage.getItem('active_tournament_id');
+        } catch (e) {
+            return null;
+        }
+    });
     const [loading, setLoading] = useState(true);
 
-    const activeTournament = tournaments.find(t => t.id === activeTournamentId) || null;
+    // Persist active ID whenever it changes
+    useEffect(() => {
+        if (activeTournamentId) {
+            localStorage.setItem('active_tournament_id', String(activeTournamentId));
+        } else {
+            localStorage.removeItem('active_tournament_id');
+        }
+    }, [activeTournamentId]);
 
-    // --- Load Tournaments & Data ---
+    // Derived: Current active tournament
+    const activeTournament = tournaments.find(t => String(t.id) === String(activeTournamentId)) || null;
+
     const loadTournaments = useCallback(async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-
-            // 1. Fetch Tournaments
-            const { data: tournamentsData, error: tourError } = await supabase
+            const { data: tourData, error: tourError } = await supabase
                 .from('tournaments')
                 .select('*')
                 .order('id', { ascending: false });
 
             if (tourError) throw tourError;
-            if (!tournamentsData) { setTournaments([]); return; }
 
-            // 2. Fetch Registrations with User Data
-            const { data: registrationsData, error: regError } = await supabase
+            const { data: regData, error: regError } = await supabase
                 .from('registrations')
                 .select(`
-          *,
-          p1:users!player1_id(first_name, last_name, phone),
-          p2:users!player2_id(first_name, last_name, phone)
-        `);
+                    *,
+                    p1:users!player1_id(first_name, last_name, phone),
+                    p2:users!player2_id(first_name, last_name, phone)
+                `);
 
             if (regError) throw regError;
 
-            // 3. Map Data
-            const mappedTournaments: Tournament[] = tournamentsData.map((t: any) => {
-                const tournamentIdStr = String(t.id);
-                const tRegs = registrationsData?.filter((r: any) => String(r.tournament_id) === tournamentIdStr) || [];
+            const mapped = (tourData || []).map((t: any) => {
+                const id = String(t.id);
+                const internal = t.data || {};
+                const tRegs = (regData || []).filter((r: any) => String(r.tournament_id) === id);
 
-                const internalData = t.data || {};
-
-                // Teams Mapped from User Data
                 const teams: Team[] = tRegs.map((r: any) => ({
                     id: String(r.id),
                     player1: {
-                        name: r.p1 ? `${r.p1.first_name} ${r.p1.last_name || ''}`.trim() : (r.player1_name || 'Desconocido 1'),
+                        name: r.p1 ? `${r.p1.first_name} ${r.p1.last_name || ''}`.trim() : (r.player1_name || 'Pareja A'),
                         phone: r.p1?.phone || r.player1_phone
                     },
                     player2: {
-                        name: r.p2 ? `${r.p2.first_name} ${r.p2.last_name || ''}`.trim() : (r.player2_name || 'Desconocido 2'),
+                        name: r.p2 ? `${r.p2.first_name} ${r.p2.last_name || ''}`.trim() : (r.player2_name || 'Pareja B'),
                         phone: r.p2?.phone || r.player2_phone
                     },
                     category: r.category,
-                    status: r.status as any,
+                    status: (r.status || 'pending') as any,
                     player1Id: r.player1_id ? String(r.player1_id) : undefined,
                     player2Id: r.player2_id ? String(r.player2_id) : undefined
                 }));
@@ -100,61 +110,65 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
                     date: t.date,
                     time: t.time,
                     description: t.description,
-                    image: internalData.image || '',
-                    totalTeams: internalData.totalTeams || 16,
-                    numberOfGroups: internalData.numberOfGroups || 4,
-                    qualifyFirst: internalData.qualifyFirst || 2,
-                    qualifyThird: internalData.qualifyThird || false,
-                    numberOfThirdQualifiers: internalData.numberOfThirdQualifiers || 0,
-                    registrationClosed: internalData.registrationClosed || false,
+                    image: internal.image || '',
+                    totalTeams: internal.totalTeams || 16,
+                    numberOfGroups: internal.numberOfGroups || 4,
+                    qualifyFirst: internal.qualifyFirst || 2,
+                    qualifyThird: internal.qualifyThird || false,
+                    numberOfThirdQualifiers: internal.numberOfThirdQualifiers || 0,
+                    registrationClosed: internal.registrationClosed || false,
+                    categorySettings: internal.categorySettings || {}
                 };
 
                 return {
-                    id: tournamentIdStr,
+                    id,
                     config,
                     teams,
-                    groups: internalData.groups || [],
-                    bracket: internalData.bracket || [],
-                    phase: internalData.phase || 'registration',
-                    champion: internalData.champion,
-                    finishedAt: internalData.finishedAt
+                    groups: internal.groups || [],
+                    bracket: internal.bracket || [],
+                    phase: internal.phase || 'registration',
+                    champion: internal.champion,
+                    finishedAt: internal.finishedAt
                 };
             });
 
-            // 4. Auto-delete expired tournaments (> 24h)
+            // Filter expired (> 48h for more buffer)
             const now = Date.now();
-            const validTournaments: Tournament[] = [];
-
-            for (const t of mappedTournaments) {
+            const valid = mapped.filter(t => {
                 if (t.phase === 'finished' && t.finishedAt) {
-                    const hoursSinceFinish = (now - t.finishedAt) / (1000 * 60 * 60);
-                    if (hoursSinceFinish >= 24) {
-                        // Delete from DB
-                        await supabase.from('tournaments').delete().eq('id', parseInt(t.id));
-                        continue; // Do not add to state
-                    }
+                    return (now - t.finishedAt) < (48 * 60 * 60 * 1000);
                 }
-                validTournaments.push(t);
+                return true;
+            });
+
+            setTournaments(valid);
+
+            // Auto-select logic: 
+            // 1. If we have a stored ID and it's valid, stick with it.
+            // 2. Otherwise, pick the newest (first in sorted list).
+            const storedId = localStorage.getItem('active_tournament_id');
+            if (!storedId || !valid.some(t => String(t.id) === String(storedId))) {
+                if (valid.length > 0) {
+                    const firstId = String(valid[0].id);
+                    setActiveTournamentId(firstId);
+                    localStorage.setItem('active_tournament_id', firstId);
+                }
+            } else if (storedId && !activeTournamentId) {
+                setActiveTournamentId(storedId);
             }
 
-            setTournaments(validTournaments);
-
-            if (validTournaments.length > 0 && !activeTournamentId) {
-                setActiveTournamentId(validTournaments[0].id);
-            } else if (activeTournamentId && !validTournaments.find(t => t.id === activeTournamentId)) {
-                setActiveTournamentId(validTournaments.length > 0 ? validTournaments[0].id : null);
-            }
-
-        } catch (err) {
-            console.error('Error loading data from Supabase:', err);
-            toast.error('Error al cargar datos');
+        } catch (err: any) {
+            console.error('Tournament Loading Error:', err);
+            toast.error('Error al cargar torneos');
         } finally {
             setLoading(false);
         }
     }, [activeTournamentId]);
 
+    useEffect(() => {
+        loadTournaments();
+    }, []); // Run on mount only
 
-    useEffect(() => { loadTournaments(); }, [loadTournaments]);
 
     // --- CRUD Operations ---
 
@@ -167,6 +181,7 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
             qualifyThird: updatedTournament.config.qualifyThird,
             numberOfThirdQualifiers: updatedTournament.config.numberOfThirdQualifiers,
             registrationClosed: updatedTournament.config.registrationClosed,
+            categorySettings: updatedTournament.config.categorySettings,
             phase: updatedTournament.phase,
             groups: updatedTournament.groups,
             bracket: updatedTournament.bracket,
@@ -185,8 +200,14 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
             })
             .eq('id', parseInt(updatedTournament.id));
 
-        if (error) { toast.error("Error al guardar cambios"); }
-        else { await loadTournaments(); }
+        if (error) {
+            toast.error("Error al guardar cambios");
+            console.error("Save Error:", error);
+            throw error;
+        } else {
+            // Update local state immediately to avoid UI lag
+            setTournaments(prev => prev.map(t => t.id === updatedTournament.id ? updatedTournament : t));
+        }
     };
 
     const createTournament = useCallback(async (config: TournamentConfig) => {
@@ -253,15 +274,16 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
     }, [loadTournaments]);
 
     const updateTournamentConfig = useCallback(async (config: TournamentConfig) => {
-        if (!activeTournament) return;
+        setTournaments(prev => {
+            const tournament = prev.find(t => String(t.id) === String(activeTournamentId));
+            if (!tournament) return prev;
 
-        const updatedTournament = {
-            ...activeTournament,
-            config
-        };
-        await saveTournamentInternal(updatedTournament);
+            const updated = { ...tournament, config };
+            saveTournamentInternal(updated).catch(console.error);
+            return prev.map(t => t.id === tournament.id ? updated : t);
+        });
         toast.success("Configuración actualizada");
-    }, [activeTournament]); // Implicitly uses saveTournamentInternal
+    }, [activeTournamentId]);
 
     const deleteTournament = useCallback(async (tournamentId: string) => {
         const { error } = await supabase.from('tournaments').delete().eq('id', parseInt(tournamentId));
@@ -276,12 +298,20 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
 
     // --- Logic for Groups & Bracket (Client Side Logic stored in JSON) ---
 
-    const generateGroups = useCallback(async () => {
-        if (!activeTournament) return;
+    const generateGroups = useCallback(async (configOverride?: Partial<TournamentConfig>) => {
+        if (!activeTournamentId) return;
 
-        const { teams, config } = activeTournament;
-        const { numberOfGroups } = config;
-        const approvedTeams = teams.filter(t => t.status === 'approved');
+        // Find current state
+        const currentTournament = tournaments.find(t => String(t.id) === String(activeTournamentId));
+        if (!currentTournament) return;
+
+        const configToUse = configOverride ? { ...currentTournament.config, ...configOverride } : currentTournament.config;
+        const approvedTeams = currentTournament.teams.filter(t => t.status === 'approved');
+
+        if (approvedTeams.length === 0) {
+            toast.error("No hay equipos aprobados para generar grupos");
+            return;
+        }
 
         const groups: Group[] = [];
         const teamsByCategory: Record<string, Team[]> = {};
@@ -291,47 +321,59 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
             teamsByCategory[cat].push(team);
         });
 
-        const categories = Object.keys(teamsByCategory);
-        const catsWithTeams = categories.filter(cat => teamsByCategory[cat].length > 0);
-        const groupsPerCat = Math.max(1, Math.floor(numberOfGroups / catsWithTeams.length));
+        const catsWithTeams = Object.keys(teamsByCategory).filter(cat => teamsByCategory[cat].length > 0);
+        catsWithTeams.forEach((cat) => {
+            const catSettings = (configToUse.categorySettings && configToUse.categorySettings[cat])
+                ? configToUse.categorySettings[cat]
+                : {
+                    numberOfGroups: configToUse.numberOfGroups,
+                    qualifyFirst: configToUse.qualifyFirst,
+                    qualifyThird: configToUse.qualifyThird,
+                    numberOfThirdQualifiers: configToUse.numberOfThirdQualifiers
+                };
 
-        catsWithTeams.forEach((cat, catIndex) => {
-            let numGroupsForCat = groupsPerCat;
-            if (catIndex === catsWithTeams.length - 1) {
-                numGroupsForCat = numberOfGroups - (groupsPerCat * (catsWithTeams.length - 1));
-            }
+            const numGroupsForCat = catSettings.numberOfGroups || 1;
             const shuffledCatTeams = shuffleArray([...teamsByCategory[cat]]);
+
             for (let i = 0; i < numGroupsForCat; i++) {
                 const groupName = catsWithTeams.length > 1 ? `${cat} - ${String.fromCharCode(65 + i)}` : `Grupo ${String.fromCharCode(65 + i)}`;
-                const groupId = generateId();
                 const teamIds: string[] = [];
                 shuffledCatTeams.forEach((team, teamIdx) => {
                     if (teamIdx % numGroupsForCat === i) teamIds.push(team.id);
                 });
+
                 if (teamIds.length > 0) {
                     groups.push({
-                        id: groupId,
+                        id: generateId(),
                         name: groupName,
                         teamIds,
                         matches: generateGroupMatches(teamIds),
-                        standings: teamIds.map(teamId => ({ teamId, played: 0, won: 0, lost: 0, gamesFor: 0, gamesAgainst: 0, gamesDiff: 0 })),
+                        standings: teamIds.map(id => ({ teamId: id, played: 0, won: 0, lost: 0, gamesFor: 0, gamesAgainst: 0, gamesDiff: 0 })),
                     });
                 }
             }
         });
 
         const updatedTournament: Tournament = {
-            ...activeTournament,
+            ...currentTournament,
+            config: configToUse,
             groups,
             phase: 'groups',
         };
-        await saveTournamentInternal(updatedTournament);
-        toast.success("Grupos generados");
-    }, [activeTournament]);
+
+        try {
+            await saveTournamentInternal(updatedTournament);
+            toast.success("Grupos generados");
+        } catch (e) {
+            console.error(e);
+        }
+    }, [activeTournamentId, tournaments, saveTournamentInternal]);
 
     const updateMatchResult = useCallback(async (groupId: string, matchId: string, result: MatchResult) => {
-        if (!activeTournament) return;
-        const updatedGroups = activeTournament.groups.map(group => {
+        const currentTournament = tournaments.find(t => String(t.id) === String(activeTournamentId));
+        if (!currentTournament) return;
+
+        const updatedGroups = currentTournament.groups.map(group => {
             if (group.id !== groupId) return group;
             const updatedMatches = group.matches.map(match => {
                 if (match.id !== matchId) return match;
@@ -339,55 +381,60 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
             });
             return { ...group, matches: updatedMatches, standings: calculateStandings(group.teamIds, updatedMatches) };
         });
-        const updatedTournament = { ...activeTournament, groups: updatedGroups };
+
+        const updatedTournament = { ...currentTournament, groups: updatedGroups };
         await saveTournamentInternal(updatedTournament);
-    }, [activeTournament]);
+    }, [activeTournamentId, tournaments, saveTournamentInternal]);
 
     const generateFinalBracket = useCallback(async () => {
-        if (!activeTournament) return;
-        const currentGroups = activeTournament.groups;
-        const { qualifyFirst, qualifyThird, numberOfThirdQualifiers } = activeTournament.config;
+        const currentTournament = tournaments.find(t => String(t.id) === String(activeTournamentId));
+        if (!currentTournament) return;
+
+        const currentGroups = currentTournament.groups;
+        const { qualifyFirst, qualifyThird, numberOfThirdQualifiers } = currentTournament.config;
 
         const groupsByLevel: Record<string, Group[]> = {};
         currentGroups.forEach(group => {
             let category = 'General';
             if (group.name.includes(' - ')) category = group.name.split(' - ')[0];
             else if (group.teamIds.length > 0) {
-                const firstTeam = activeTournament.teams.find(t => t.id === group.teamIds[0]);
+                const firstTeam = currentTournament.teams.find(t => t.id === group.teamIds[0]);
                 if (firstTeam?.category) category = firstTeam.category;
             }
             if (!groupsByLevel[category]) groupsByLevel[category] = [];
             groupsByLevel[category].push(group);
         });
 
-        let allRankedTeams: any[] = [];
+        let allBracketMatches: BracketMatch[] = [];
+
         Object.keys(groupsByLevel).forEach(cat => {
             const levelGroups = groupsByLevel[cat];
             const rankedTeams = getRankedTeams(levelGroups, qualifyFirst, qualifyThird ? numberOfThirdQualifiers : 0);
-            allRankedTeams = [...allRankedTeams, ...rankedTeams];
+            if (rankedTeams.length >= 2) {
+                const catBracket = generateBracket(rankedTeams, levelGroups);
+                allBracketMatches = [...allBracketMatches, ...catBracket];
+            }
         });
 
-        const allBracketMatches = generateBracket(allRankedTeams, currentGroups);
-
         const updatedTournament: Tournament = {
-            ...activeTournament,
+            ...currentTournament,
             bracket: allBracketMatches,
             phase: 'bracket',
         };
         await saveTournamentInternal(updatedTournament);
         toast.success("Fase final generada");
-    }, [activeTournament]);
+    }, [activeTournamentId, tournaments, saveTournamentInternal]);
 
     const updateBracketMatch = useCallback(async (matchId: string, result: MatchResult) => {
-        if (!activeTournament) return;
-        let updatedBracket = activeTournament.bracket.map(m => m.id === matchId ? { ...m, result, status: 'finished' as const } : m);
+        const currentTournament = tournaments.find(t => String(t.id) === String(activeTournamentId));
+        if (!currentTournament) return;
 
-        // Advance winner logic
+        let updatedBracket = currentTournament.bracket.map(m => m.id === matchId ? { ...m, result, status: 'finished' as const } : m);
+
         const completedMatch = updatedBracket.find(m => m.id === matchId);
         if (completedMatch?.result?.winner && completedMatch.nextMatchId) {
             const nextMatch = updatedBracket.find(m => m.id === completedMatch.nextMatchId);
-            const previousMatches = updatedBracket.filter(m => m.nextMatchId === nextMatch?.id);
-            const winnerIndex = previousMatches.findIndex(m => m.id === matchId);
+            const winnerIndex = updatedBracket.filter(m => m.nextMatchId === nextMatch?.id).findIndex(m => m.id === matchId);
             updatedBracket = updatedBracket.map(m => {
                 if (m.id === completedMatch.nextMatchId) {
                     return { ...m, [winnerIndex === 0 ? 'team1Id' : 'team2Id']: completedMatch.result!.winner };
@@ -396,28 +443,45 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
             });
         }
 
-        const finalMatch = updatedBracket.find(m => m.round === 'Final');
-        const champion = finalMatch?.result?.winner;
+        const champion = updatedBracket.find(m => m.round === 'Final')?.result?.winner;
 
         const updatedTournament: Tournament = {
-            ...activeTournament,
+            ...currentTournament,
             bracket: updatedBracket,
             phase: 'bracket',
             champion
         };
         await saveTournamentInternal(updatedTournament);
-    }, [activeTournament]);
+    }, [activeTournamentId, tournaments, saveTournamentInternal]);
 
     const getTeamById = useCallback((teamId: string) => {
         return activeTournament?.teams.find(t => t.id === teamId);
     }, [activeTournament]);
 
     const resetTournaments = useCallback(async () => {
-        // Dangerous! Disabled for safety
-    }, []);
+        if (!activeTournament) return;
+
+        const updatedTournament: Tournament = {
+            ...activeTournament,
+            phase: 'registration',
+            groups: [],
+            bracket: [],
+            champion: undefined,
+            finishedAt: undefined
+        };
+
+        try {
+            await saveTournamentInternal(updatedTournament);
+            toast.success("Torneo reseteado correctamente");
+        } catch (e) {
+            console.error(e);
+        }
+    }, [activeTournament, saveTournamentInternal]);
 
     const setActiveTournament = useCallback((id: string | null) => {
         setActiveTournamentId(id);
+        if (id) localStorage.setItem('active_tournament_id', id);
+        else localStorage.removeItem('active_tournament_id');
     }, []);
 
     const finishTournament = useCallback(async () => {
@@ -431,6 +495,84 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
         };
         await saveTournamentInternal(updatedTournament);
         toast.success("Torneo finalizado oficialmente");
+    }, [activeTournament]);
+
+    const debugGenerateTeams = useCallback(async () => {
+        if (!activeTournament) return;
+
+        const levels = ['Iniciación', 'Nivel Medio'];
+        const newRegistrations = [];
+
+        for (const level of levels) {
+            for (let i = 1; i <= 8; i++) {
+                newRegistrations.push({
+                    tournament_id: parseInt(activeTournament.id),
+                    player1_name: `Jugador ${level[0]}-${i}A`,
+                    player2_name: `Jugador ${level[0]}-${i}B`,
+                    category: level,
+                    status: 'approved',
+                    // Assuming DB allows null player_ids for manual/dummy entries
+                });
+            }
+        }
+
+        const { error } = await supabase.from('registrations').insert(newRegistrations);
+        if (error) {
+            console.error(error);
+            toast.error("Error generando datos: " + error.message);
+        } else {
+            toast.success("16 parejas generadas correctamente");
+            await loadTournaments();
+        }
+    }, [activeTournament, loadTournaments]);
+
+    const debugGenerateResults = useCallback(async () => {
+        if (!activeTournament || activeTournament.phase !== 'groups') return;
+
+        const updatedGroups = activeTournament.groups.map(group => {
+            const updatedMatches = group.matches.map(match => {
+                if (match.status === 'finished') return match;
+
+                // Random score logic (simple: first to 6 wins, 2 sets, sometimes 3)
+                // We'll just do 2 sets for simplicity to ensure a winner
+                // 50/50 winner
+                const winnerId = Math.random() > 0.5 ? match.team1Id : match.team2Id;
+                const isTeam1Winner = winnerId === match.team1Id;
+
+                // Generate realistic set scores
+                const sets = [];
+                for (let i = 0; i < 2; i++) {
+                    const winnerScore = 6;
+                    const loserScore = Math.floor(Math.random() * 5); // 0-4
+                    sets.push({
+                        team1: isTeam1Winner ? winnerScore : loserScore,
+                        team2: isTeam1Winner ? loserScore : winnerScore
+                    });
+                }
+
+                return {
+                    ...match,
+                    status: 'finished' as const,
+                    result: {
+                        sets,
+                        winner: winnerId
+                    }
+                };
+            });
+            // Recalculate standings for this group
+            return {
+                ...group,
+                matches: updatedMatches,
+                standings: calculateStandings(group.teamIds, updatedMatches)
+            };
+        });
+
+        const updatedTournament = {
+            ...activeTournament,
+            groups: updatedGroups
+        };
+        await saveTournamentInternal(updatedTournament);
+        toast.success("Resultados aleatorios generados");
     }, [activeTournament]);
 
     return (
@@ -454,6 +596,8 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
                 resetTournaments,
                 refreshTournaments: loadTournaments,
                 finishTournament,
+                debugGenerateTeams,
+                debugGenerateResults,
             }}
         >
             {children}

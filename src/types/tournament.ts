@@ -59,6 +59,13 @@ export interface BracketMatch extends Match {
   previousMatchIds?: string[];
 }
 
+export interface CategoryConfig {
+  numberOfGroups: number;
+  qualifyFirst: number;
+  qualifyThird: boolean;
+  numberOfThirdQualifiers: number;
+}
+
 export interface TournamentConfig {
   name: string;
   description: string;
@@ -67,10 +74,11 @@ export interface TournamentConfig {
   image?: string;
   totalTeams: number;
   numberOfGroups: number;
-  qualifyFirst: number; // Usually 2
+  qualifyFirst: number; // Default or global
   qualifyThird: boolean;
   numberOfThirdQualifiers: number;
   registrationClosed: boolean;
+  categorySettings?: Record<string, CategoryConfig>;
 }
 
 export interface Tournament {

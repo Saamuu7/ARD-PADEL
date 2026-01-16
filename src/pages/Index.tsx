@@ -79,21 +79,21 @@ const Index: React.FC = () => {
               <span className="uppercase tracking-[0.5em] text-[10px] font-black text-white/80 shrink-0">Torneos Amateur y Eventos</span>
             </div>
 
-            <h1 className="font-display font-black text-7xl md:text-[10rem] text-white mb-10 tracking-tighter animate-slide-up leading-[0.75] uppercase">
+            <h1 className="font-display font-black text-5xl sm:text-7xl md:text-[10rem] text-white mb-10 tracking-tighter animate-slide-up leading-[0.9] md:leading-[0.75] uppercase">
               ARD <span className="text-primary italic drop-shadow-[0_0_50px_rgba(25,231,142,0.4)]">PÁDEL</span>
             </h1>
 
-            <p className="text-xl md:text-3xl text-muted-foreground mb-16 max-w-3xl mx-auto animate-slide-up transition-all duration-700 delay-100 font-medium leading-relaxed opacity-90 text-balance">
+            <p className="text-lg md:text-3xl text-muted-foreground mb-16 max-w-3xl mx-auto animate-slide-up transition-all duration-700 delay-100 font-medium leading-relaxed opacity-90 text-balance px-4">
               Redefiniendo el nivel de la competición. El sello oficial de los eventos que marcan la diferencia.
             </p>
 
-            <div className="flex justify-center animate-slide-up delay-200 w-full sm:w-auto">
+            <div className="flex justify-center animate-slide-up delay-200 w-full px-4">
               <Button
                 onClick={() => document.getElementById('torneos')?.scrollIntoView({ behavior: 'smooth' })}
-                className="btn-primary-gradient w-full sm:w-auto px-20 py-10 text-xl font-black uppercase tracking-[0.2em] group shadow-[0_30px_60px_-15px_rgba(25,231,142,0.5)]"
+                className="btn-primary-gradient w-full sm:w-auto px-8 py-6 sm:px-20 sm:py-10 text-lg sm:text-xl font-black uppercase tracking-[0.2em] group shadow-[0_30px_60px_-15px_rgba(25,231,142,0.5)]"
               >
                 Inscribirse
-                <ArrowRight className="w-7 h-7 ml-4 group-hover:translate-x-2 transition-transform" />
+                <ArrowRight className="w-5 h-5 sm:w-7 sm:h-7 ml-4 group-hover:translate-x-2 transition-transform" />
               </Button>
             </div>
           </div>
@@ -101,7 +101,7 @@ const Index: React.FC = () => {
 
         {/* Mouse Scroll Indicator */}
         <div
-          className="absolute bottom-16 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-3 cursor-pointer group"
+          className="absolute bottom-8 sm:bottom-16 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-3 cursor-pointer group"
           onClick={() => document.getElementById(tournaments.length > 0 ? 'torneos' : 'sobre-nosotros')?.scrollIntoView({ behavior: 'smooth' })}
         >
           <div className="w-[26px] h-[45px] rounded-full border-2 border-white/20 flex justify-center p-1 group-hover:border-primary/50 transition-colors duration-500">
@@ -114,12 +114,12 @@ const Index: React.FC = () => {
       {/* Tournaments Section */}
       <section id="torneos" className="relative">
         {tournaments.length > 0 ? (
-          <div className="py-32 relative overflow-hidden bg-secondary/10">
+          <div className="py-20 sm:py-32 relative overflow-hidden bg-secondary/10">
             <div className="container mx-auto px-4">
               <div className="flex flex-col md:flex-row items-baseline justify-between mb-20 gap-8 border-b border-white/5 pb-10">
                 <div>
                   <h2 className="text-primary font-black uppercase tracking-[0.5em] text-xs mb-4">Competiciones Activas</h2>
-                  <h3 className="font-display font-black text-5xl md:text-6xl text-foreground leading-none tracking-tighter uppercase">
+                  <h3 className="font-display font-black text-4xl sm:text-6xl text-foreground leading-none tracking-tighter uppercase">
                     ELIGE TU <span className="text-white/30 italic">BATALLA.</span>
                   </h3>
                 </div>
@@ -135,7 +135,7 @@ const Index: React.FC = () => {
                   const isApproved = myTeam?.status === 'approved';
 
                   return (
-                    <div key={t.id} className="group relative overflow-hidden rounded-[3rem] bg-card/50 backdrop-blur-3xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-primary/30 hover:shadow-primary/10">
+                    <div key={t.id} className="group relative overflow-hidden rounded-[2rem] sm:rounded-[3rem] bg-card/50 backdrop-blur-3xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-primary/30 hover:shadow-primary/10">
                       <div className="grid lg:grid-cols-2">
                         <div className="relative aspect-video lg:aspect-auto overflow-hidden">
                           <img
@@ -146,25 +146,25 @@ const Index: React.FC = () => {
                           <div className="absolute inset-0 bg-gradient-to-r from-card/80 to-transparent lg:hidden" />
 
                           {/* Date/Time Badge */}
-                          <div className="absolute top-8 left-8 flex gap-3">
-                            <div className="px-4 py-2 bg-background/80 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
-                              <Calendar className="w-3.5 h-3.5 text-primary" />
-                              <span className="text-[10px] font-black uppercase tracking-widest text-white">{t.config.date}</span>
+                          <div className="absolute top-4 left-4 sm:top-8 sm:left-8 flex gap-3">
+                            <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background/80 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
+                              <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white">{t.config.date}</span>
                             </div>
-                            <div className="px-4 py-2 bg-background/80 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
-                              <Clock className="w-3.5 h-3.5 text-primary" />
-                              <span className="text-[10px] font-black uppercase tracking-widest text-white">{t.config.time}</span>
+                            <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background/80 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
+                              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white">{t.config.time}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="p-12 lg:p-16 flex flex-col justify-center">
+                        <div className="p-8 sm:p-12 lg:p-16 flex flex-col justify-center">
                           <div className="flex items-center gap-3 mb-6">
                             <Star className="w-5 h-5 text-accent fill-accent" />
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Competición ARD</span>
                           </div>
 
-                          <h3 className="font-display font-black text-4xl mb-6 uppercase tracking-tighter leading-tight">
+                          <h3 className="font-display font-black text-3xl sm:text-4xl mb-6 uppercase tracking-tighter leading-tight">
                             {t.config.name}
                           </h3>
 
@@ -202,17 +202,17 @@ const Index: React.FC = () => {
 
                           <div className="mt-auto">
                             {t.phase === 'finished' ? (
-                              <Button disabled className="w-full py-8 text-lg font-black uppercase tracking-widest bg-white/5 text-white/40 border border-white/10">
+                              <Button disabled className="w-full py-6 sm:py-8 text-lg font-black uppercase tracking-widest bg-white/5 text-white/40 border border-white/10">
                                 Torneo Finalizado
                               </Button>
                             ) : (t.config.registrationClosed && !isRegistered) ? (
-                              <Button disabled className="w-full py-8 text-lg font-black uppercase tracking-widest bg-destructive/10 text-destructive border border-destructive/20">
+                              <Button disabled className="w-full py-6 sm:py-8 text-lg font-black uppercase tracking-widest bg-destructive/10 text-destructive border border-destructive/20">
                                 Inscripciones Cerradas
                               </Button>
                             ) : (
                               <Button
                                 onClick={() => handleRegistration(t.id)}
-                                className={`w-full py-8 text-lg font-black uppercase tracking-widest group ${isRegistered
+                                className={`w-full py-6 sm:py-8 text-sm sm:text-lg font-black uppercase tracking-widest group ${isRegistered
                                   ? isApproved
                                     ? 'bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20'
                                     : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/20'
@@ -227,7 +227,7 @@ const Index: React.FC = () => {
                                 ) : (
                                   <>
                                     Inscribirse Ahora
-                                    <ArrowRight className="w-7 h-7 ml-4 group-hover:translate-x-2 transition-transform" />
+                                    <ArrowRight className="w-5 h-5 sm:w-7 sm:h-7 ml-4 group-hover:translate-x-2 transition-transform" />
                                   </>
                                 )}
                               </Button>
@@ -260,68 +260,68 @@ const Index: React.FC = () => {
       </section>
 
       {/* About Section - Professional Bento Style */}
-      <section id="sobre-nosotros" className="py-40 relative">
+      <section id="sobre-nosotros" className="py-20 sm:py-40 relative">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mb-24">
+          <div className="max-w-3xl mb-12 sm:mb-24">
             <h2 className="text-accent font-black uppercase tracking-[0.5em] text-xs mb-6">Misión & Legado</h2>
-            <h3 className="font-display font-black text-6xl md:text-7xl text-foreground mb-10 leading-[0.9] uppercase tracking-tighter">
+            <h3 className="font-display font-black text-4xl sm:text-6xl md:text-7xl text-foreground mb-10 leading-[0.9] uppercase tracking-tighter">
               QUIÉNES <br /><span className="text-white/20">FORMAN ARD.</span>
             </h3>
-            <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed opacity-80">
+            <p className="text-lg sm:text-2xl text-muted-foreground leading-relaxed opacity-80">
               Creamos el ecosistema donde el fair-play y la máxima competitividad convergen. ARD PÁDEL es el resultado de una visión profesional aplicada al pádel de club.
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-10">
-            <div className="lg:col-span-8 grid md:grid-cols-2 gap-10">
+          <div className="grid lg:grid-cols-12 gap-6 sm:gap-10">
+            <div className="lg:col-span-8 grid md:grid-cols-2 gap-6 sm:gap-10">
               {organizers.map((org, i) => (
-                <div key={i} className="tournament-card group border-l-8 border-l-primary/40 bg-white/[0.02] p-12">
-                  <div className="flex gap-8 items-center mb-8">
-                    <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-primary/20 shadow-2xl">
+                <div key={i} className="tournament-card group border-l-8 border-l-primary/40 bg-white/[0.02] p-8 sm:p-12">
+                  <div className="flex gap-6 sm:gap-8 items-center mb-8">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl overflow-hidden border-2 border-primary/20 shadow-2xl">
                       <img src={org.image} alt={org.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-110" />
                     </div>
                     <div>
-                      <h4 className="font-black text-3xl uppercase tracking-tighter">{org.name}</h4>
+                      <h4 className="font-black text-xl sm:text-3xl uppercase tracking-tighter">{org.name}</h4>
                       <p className="text-primary text-xs font-black uppercase tracking-[0.3em] mt-1">{org.role}</p>
                     </div>
                   </div>
-                  <p className="text-muted-foreground text-lg leading-relaxed italic opacity-70 group-hover:opacity-100 transition-opacity">"{org.description}"</p>
+                  <p className="text-muted-foreground text-base sm:text-lg leading-relaxed italic opacity-70 group-hover:opacity-100 transition-opacity">"{org.description}"</p>
                 </div>
               ))}
 
-              <div className="md:col-span-2 glass p-12 rounded-[3rem] flex flex-col md:flex-row items-center gap-12 border-t-8 border-t-accent/40 bg-accent/5">
+              <div className="md:col-span-2 glass p-8 sm:p-12 rounded-[2rem] sm:rounded-[3rem] flex flex-col md:flex-row items-center gap-12 border-t-8 border-t-accent/40 bg-accent/5">
                 <div className="text-center md:text-left flex-1">
-                  <h4 className="font-black text-4xl mb-4 uppercase tracking-tighter text-white">EL SELLO DE CALIDAD</h4>
-                  <p className="text-muted-foreground text-lg">Reglamentación profesional, jueces titulados y las instalaciones más premium de España.</p>
+                  <h4 className="font-black text-3xl sm:text-4xl mb-4 uppercase tracking-tighter text-white">EL SELLO DE CALIDAD</h4>
+                  <p className="text-muted-foreground text-sm sm:text-lg">Reglamentación profesional, jueces titulados y las instalaciones más premium de España.</p>
                 </div>
-                <div className="flex gap-12">
+                <div className="flex gap-8 sm:gap-12">
                   <div className="text-center">
-                    <span className="block text-6xl font-black text-primary mb-2 drop-shadow-[0_0_15px_rgba(25,231,142,0.3)]">50+</span>
+                    <span className="block text-4xl sm:text-6xl font-black text-primary mb-2 drop-shadow-[0_0_15px_rgba(25,231,142,0.3)]">50+</span>
                     <span className="text-[10px] uppercase font-black tracking-[0.4em] text-white/30">Eventos Élite</span>
                   </div>
                   <div className="text-center">
-                    <span className="block text-6xl font-black text-accent mb-2 drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]">2k+</span>
+                    <span className="block text-4xl sm:text-6xl font-black text-accent mb-2 drop-shadow-[0_0_15px_rgba(255,215,0,0.2)]">2k+</span>
                     <span className="text-[10px] uppercase font-black tracking-[0.4em] text-white/30">Gladiadores</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="lg:col-span-4 relative rounded-[3rem] overflow-hidden min-h-[500px] border border-white/5 group shadow-2xl">
+            <div className="lg:col-span-4 relative rounded-[2rem] sm:rounded-[3rem] overflow-hidden min-h-[400px] sm:min-h-[500px] border border-white/5 group shadow-2xl">
               <img
                 src="https://images.unsplash.com/photo-1592709823125-a191f07a2a5e?q=80&w=2026&auto=format&fit=crop"
                 alt="Competición ARD"
                 className="w-full h-full object-cover brightness-50 group-hover:scale-110 transition-transform duration-[3s]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80" />
-              <div className="absolute bottom-12 left-12 right-12 text-left">
+              <div className="absolute bottom-8 left-8 right-8 sm:bottom-12 sm:left-12 sm:right-12 text-left">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/40">
-                    <Zap className="w-7 h-7 text-white fill-white" />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/40">
+                    <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-white fill-white" />
                   </div>
                   <span className="font-black uppercase tracking-[0.3em] text-xs text-white">Competición Pura</span>
                 </div>
-                <h4 className="font-black text-2xl text-white mb-2 uppercase tracking-tighter">Eventos de Élite</h4>
+                <h4 className="font-black text-xl sm:text-2xl text-white mb-2 uppercase tracking-tighter">Eventos de Élite</h4>
                 <p className="text-white/60 text-sm leading-relaxed">Organizamos torneos con un estándar de calidad profesional en cada detalle del evento.</p>
               </div>
             </div>
@@ -330,99 +330,80 @@ const Index: React.FC = () => {
       </section>
 
       {/* Why ARD - Visual Gallery */}
-      <section className="py-32 relative">
+      <section className="py-20 sm:py-32 relative">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-24">
+          <div className="text-center mb-16 sm:mb-24">
             <h2 className="text-primary font-black uppercase tracking-[0.5em] text-xs mb-4">Experiencia Premium</h2>
-            <h3 className="font-display font-black text-5xl md:text-6xl text-white uppercase tracking-tighter">
+            <h3 className="font-display font-black text-4xl sm:text-5xl md:text-6xl text-white uppercase tracking-tighter">
               POR QUÉ ELEGIR <span className="text-white/20">ARD.</span>
             </h3>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Card 1: Premios */}
-            <div className="group relative h-[500px] rounded-[3rem] overflow-hidden border border-white/10">
-              <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2071&auto=format&fit=crop" alt="Premios" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 brightness-50" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 p-10">
-                <div className="w-14 h-14 bg-accent rounded-2xl flex items-center justify-center mb-6 text-background">
-                  <TrophyIcon className="w-7 h-7" />
+            {/* Cards styling maintained largely the same as grid handles layout automatically */}
+            {[
+              { img: "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2071&auto=format&fit=crop", icon: TrophyIcon, title: "Premios Metálicos", desc: "Repartimos los mejores premios de la zona. Recompensamos tu esfuerzo con valor real.", color: "accent" },
+              { img: "https://images.unsplash.com/photo-1624880357913-a8539238245b?q=80&w=2070&auto=format&fit=crop", icon: Users, title: "Comunidad Élite", desc: "Más que un torneo, es un punto de encuentro. Networking, diversión y competición sana.", color: "primary" },
+              { img: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop", icon: Crown, title: "Trato VIP", desc: "Agua, fruta, welcome pack. Te tratamos como a un profesional.", color: "white" }
+            ].map((card, idx) => (
+              <div key={idx} className="group relative h-[400px] sm:h-[500px] rounded-[2rem] sm:rounded-[3rem] overflow-hidden border border-white/10">
+                <img src={card.img} alt={card.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 brightness-50" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 p-8 sm:p-10">
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 bg-${card.color} rounded-2xl flex items-center justify-center mb-6 text-background`}>
+                    <card.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                  </div>
+                  <h4 className="font-black text-xl sm:text-2xl text-white uppercase tracking-tight mb-2">{card.title}</h4>
+                  <p className="text-white/60 text-sm leading-relaxed">{card.desc}</p>
                 </div>
-                <h4 className="font-black text-2xl text-white uppercase tracking-tight mb-2">Premios Metálicos</h4>
-                <p className="text-white/60 text-sm leading-relaxed">Repartimos los mejores premios de la zona. Recompensamos tu esfuerzo con valor real.</p>
               </div>
-            </div>
-
-            {/* Card 2: Ambiente */}
-            <div className="group relative h-[500px] rounded-[3rem] overflow-hidden border border-white/10">
-              <img src="https://images.unsplash.com/photo-1624880357913-a8539238245b?q=80&w=2070&auto=format&fit=crop" alt="Ambiente" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 brightness-50" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 p-10">
-                <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mb-6 text-background">
-                  <Users className="w-7 h-7" />
-                </div>
-                <h4 className="font-black text-2xl text-white uppercase tracking-tight mb-2">Comunidad Élite</h4>
-                <p className="text-white/60 text-sm leading-relaxed">Más que un torneo, es un punto de encuentro. Networking, diversión y competición sana.</p>
-              </div>
-            </div>
-
-            {/* Card 3: Organización */}
-            <div className="group relative h-[500px] rounded-[3rem] overflow-hidden border border-white/10">
-              <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop" alt="Organización" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 brightness-50" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 p-10">
-                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-6 text-background">
-                  <Crown className="w-7 h-7" />
-                </div>
-                <h4 className="font-black text-2xl text-white uppercase tracking-tight mb-2">Trato VIP</h4>
-                <p className="text-white/60 text-sm leading-relaxed">Agua, fruta, welcome pack. Te tratamos como a un profesional.</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-
       {/* Social Banner - Clean & Premium */}
-      <section className="py-32 border-y border-white/5 bg-white/[0.01]">
-        <div className="container mx-auto px-4 grid md:grid-cols-3 gap-20">
+      <section className="py-20 sm:py-32 border-y border-white/5 bg-white/[0.01]">
+        <div className="container mx-auto px-4 grid md:grid-cols-3 gap-12 sm:gap-20">
           <div className="text-center group cursor-pointer">
-            <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/10 group-hover:bg-primary/20 transition-all duration-500">
-              <Instagram className="w-10 h-10 text-primary" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 sm:mb-8 border border-white/10 group-hover:bg-primary/20 transition-all duration-500">
+              <Instagram className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
             </div>
             <h4 className="font-black text-[10px] uppercase tracking-[0.4em] text-white/30 mb-2">Social Feed</h4>
-            <p className="text-3xl font-black text-white group-hover:text-primary transition-colors">@ARDPADEL_OFICIAL</p>
+            <p className="text-xl sm:text-3xl font-black text-white group-hover:text-primary transition-colors">@ARDPADEL_OFICIAL</p>
           </div>
+          {/* ... other social items ... */}
+          {/* Replicating structure for brevity in edit, but applying similar scale classes */}
           <div className="text-center group cursor-pointer">
-            <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/10 group-hover:bg-accent/20 transition-all duration-500">
-              <Mail className="w-10 h-10 text-accent" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 sm:mb-8 border border-white/10 group-hover:bg-accent/20 transition-all duration-500">
+              <Mail className="w-8 h-8 sm:w-10 sm:h-10 text-accent" />
             </div>
             <h4 className="font-black text-[10px] uppercase tracking-[0.4em] text-white/30 mb-2">Consultas</h4>
-            <p className="text-3xl font-black text-white group-hover:text-accent transition-colors">INFO@ARDPADEL.COM</p>
+            <p className="text-xl sm:text-3xl font-black text-white group-hover:text-accent transition-colors">INFO@ARDPADEL.COM</p>
           </div>
           <div className="text-center group cursor-pointer">
-            <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/10 group-hover:bg-primary/20 transition-all duration-500">
-              <Phone className="w-10 h-10 text-primary" />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 sm:mb-8 border border-white/10 group-hover:bg-primary/20 transition-all duration-500">
+              <Phone className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
             </div>
             <h4 className="font-black text-[10px] uppercase tracking-[0.4em] text-white/30 mb-2">WhatsApp Direct</h4>
-            <p className="text-3xl font-black text-white group-hover:text-primary transition-colors">+34 000 000 000</p>
+            <p className="text-xl sm:text-3xl font-black text-white group-hover:text-primary transition-colors">+34 000 000 000</p>
           </div>
         </div>
       </section>
 
       {/* Footer - Final Masterpiece */}
-      <footer className="py-24 relative overflow-hidden">
+      <footer className="py-16 sm:py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-primary/5 opacity-20 skew-y-3 translate-y-32" />
         <div className="container mx-auto px-4 text-center relative z-10">
-          <div className="flex items-center justify-center gap-6 mb-12">
-            <img src="/logo.png" alt="ARD PADEL" className="w-20 h-20 object-contain rounded-full border-2 border-primary p-1 bg-black/20" />
-            <div className="text-left">
-              <span className="font-display font-black text-5xl tracking-tighter uppercase block leading-none text-white">ARD <span className="text-primary italic">PÁDEL</span></span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
+            <img src="/logo.png" alt="ARD PADEL" className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-full border-2 border-primary p-1 bg-black/20" />
+            <div className="text-center sm:text-left">
+              <span className="font-display font-black text-4xl sm:text-5xl tracking-tighter uppercase block leading-none text-white">ARD <span className="text-primary italic">PÁDEL</span></span>
               <span className="text-[10px] uppercase font-black tracking-[1em] text-white/20 mt-2 block">Professional DNA</span>
             </div>
           </div>
 
-          <div className="flex justify-center gap-16 text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-16">
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 sm:gap-16 text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-16">
             <Link to="/reglamento" className="hover:text-primary transition-all">Reglamento</Link>
             <Link to="/privacidad" className="hover:text-primary transition-all">Privacidad</Link>
             <Link to="/cookies" className="hover:text-primary transition-all">Cookies</Link>

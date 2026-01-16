@@ -182,7 +182,7 @@ export const getRankedTeams = (
 
       if (index < qualifyFirst) {
         rankedTeams.push(ranked);
-      } else if (index === 2 && numberOfThirdQualifiers > 0) {
+      } else if (index === qualifyFirst && numberOfThirdQualifiers > 0) {
         thirds.push(ranked);
       }
     });
@@ -216,6 +216,7 @@ export const generateBracket = (rankedTeams: RankedTeam[], groups: Group[]): Bra
       case 2: return 'Semifinal';
       case 4: return 'Cuartos';
       case 8: return 'Octavos';
+      case 16: return 'Dieciseisavos';
       default: return `Ronda de ${matchesInRound * 2}`;
     }
   };

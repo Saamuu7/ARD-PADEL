@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Trophy, Users, Grid3X3, GitBranch, Settings, Calendar, ArrowRight, RotateCcw, MessageCircle, Mail, Instagram, UserCircle, LogOut, Bell } from 'lucide-react';
+import { Menu, X, Trophy, Users, Grid3X3, GitBranch, Settings, Calendar, ArrowRight, RotateCcw, MessageCircle, Mail, Instagram, UserCircle, LogOut, Bell, Play, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTournament } from '@/context/TournamentContext';
 import { toast } from 'sonner';
@@ -72,6 +72,7 @@ const Header: React.FC = () => {
       { path: '/', label: 'Inicio', icon: Trophy },
       { path: '/#torneos', label: 'Torneos', icon: Calendar },
       { path: '/#sobre-nosotros', label: 'Sobre Nosotros', icon: Users },
+      ...(user ? [{ path: '/competicion', label: 'Mi Torneo', icon: Lock }] : []),
     ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
@@ -88,20 +89,19 @@ const Header: React.FC = () => {
           setIsMenuOpen(false);
         }
       }
-      // If we are NOT on home page, the Link component will handle standard navigation to '/#hash'
-      // and the Index page's useEffect will handle the scrolling upon mounting.
     }
   };
 
   const handleReset = () => {
-    if (window.confirm('¿Estás SEGURO de que quieres borrar todos los datos del torneo? Esta acción es irreversible.')) {
+    if (window.confirm('¿Estás SEGURO de que quieres borrar el progreso de este torneo? Se eliminarán grupos, resultados y cuadro.')) {
       resetTournaments();
     }
   };
 
-  const handleLogout = () => {
+  const handleLogoutAdmin = () => {
+    sessionStorage.removeItem('isAuthenticated');
     localStorage.removeItem('isAuthenticated');
-    toast.success('Sesión cerrada correctamente 👋');
+    toast.success('Sesión de administrador cerrada 🔐');
   };
 
   return (
@@ -150,16 +150,7 @@ const Header: React.FC = () => {
           <div className="flex items-center gap-4">
             {isDashboard ? (
               <div className="flex items-center gap-3">
-                <Button
-                  onClick={handleReset}
-                  variant="ghost"
-                  size="sm"
-                  className="hidden md:flex text-[10px] font-black uppercase tracking-widest text-destructive hover:bg-destructive/10 rounded-full py-6 px-6"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Reset
-                </Button>
-                <Link to="/" onClick={handleLogout}>
+                <Link to="/" onClick={handleLogoutAdmin}>
                   <Button size="sm" className="btn-primary-gradient px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">
                     Salir Admin
                   </Button>

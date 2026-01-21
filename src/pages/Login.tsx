@@ -12,9 +12,9 @@ const Login: React.FC = () => {
         e.preventDefault();
         // Simple authentication check
         if (password === 'admin') {
-            sessionStorage.setItem('isAuthenticated', 'true');
-            // Remove old localStorage key if it exists to clean up
-            localStorage.removeItem('isAuthenticated');
+            const now = new Date().getTime();
+            localStorage.setItem('isAuthenticated', 'true');
+            localStorage.setItem('organizador_last_access', now.toString());
             toast.success('Acceso autorizado 🔓');
             navigate('/organizador/panel-de-control');
         } else {

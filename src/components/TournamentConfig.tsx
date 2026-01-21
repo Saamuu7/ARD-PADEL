@@ -19,7 +19,12 @@ const initialConfig: TournamentConfigType = {
   categorySettings: {}
 };
 
-const TournamentConfigComponent: React.FC = () => {
+interface TournamentConfigProps {
+  isCreating: boolean;
+  setIsCreating: (v: boolean) => void;
+}
+
+const TournamentConfigComponent: React.FC<TournamentConfigProps> = ({ isCreating, setIsCreating }) => {
   const {
     tournaments,
     activeTournament,
@@ -32,10 +37,17 @@ const TournamentConfigComponent: React.FC = () => {
     generateFinalBracket
   } = useTournament();
 
-  const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showGenerationSettings, setShowGenerationSettings] = useState(false);
   const [config, setConfig] = useState<TournamentConfigType>(initialConfig);
+
+  useEffect(() => {
+    if (isCreating) {
+      setIsEditing(false);
+      setConfig(initialConfig);
+      setShowGenerationSettings(false);
+    }
+  }, [isCreating]);
 
   // State for category-specific wizard
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
@@ -387,22 +399,57 @@ const TournamentConfigComponent: React.FC = () => {
     );
   };
 
+  // Pagination for tournament list
+  const [tournamentPage, setTournamentPage] = useState(0);
+  const pageSize = 5;
+  const paginatedTournaments = tournaments.slice(tournamentPage * pageSize, (tournamentPage + 1) * pageSize);
+  const totalPages = Math.ceil(tournaments.length / pageSize);
+
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap gap-4">
-        {tournaments.map(t => (
-          <button
-            key={t.id}
-            onClick={() => { setActiveTournament(t.id); setIsCreating(false); setIsEditing(false); setShowGenerationSettings(false); }}
-            className={`px-6 py-4 rounded-2xl border transition-all duration-500 flex items-center gap-3 group ${activeTournament?.id === t.id && !isCreating ? 'bg-primary border-primary text-background shadow-[0_0_30px_rgba(25,231,142,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:border-primary/50'}`}
+      <div className="flex items-center gap-4 mb-8">
+        {totalPages > 1 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTournamentPage(prev => Math.max(0, prev - 1))}
+            disabled={tournamentPage === 0}
+            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-primary disabled:opacity-10 transition-all shrink-0"
           >
-            <Trophy className={`w-4 h-4 ${activeTournament?.id === t.id && !isCreating ? 'text-background' : 'text-primary'}`} />
-            <span className="text-[10px] font-black uppercase tracking-widest">{t.config.name}</span>
-          </button>
-        ))}
-        <button onClick={() => { setIsCreating(true); setIsEditing(false); setConfig(initialConfig); setShowGenerationSettings(false); }} className="px-6 py-4 rounded-2xl border border-dashed border-white/20 text-white/20 hover:border-accent hover:text-accent transition-all">
-          <Plus className="w-4 h-4" />
-        </button>
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+        )}
+
+        <div className="flex-1 flex items-center gap-3 min-w-0">
+          {paginatedTournaments.map(t => (
+            <button
+              key={t.id}
+              onClick={() => { setActiveTournament(t.id); setIsCreating(false); setIsEditing(false); setShowGenerationSettings(false); }}
+              className={`flex-1 min-w-0 px-4 py-4 rounded-2xl border transition-all duration-500 flex items-center justify-center gap-2 group ${activeTournament?.id === t.id && !isCreating ? 'bg-primary border-primary text-background shadow-[0_0_30px_rgba(25,231,142,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:border-primary/50'}`}
+            >
+              <Trophy className={`w-3.5 h-3.5 shrink-0 ${activeTournament?.id === t.id && !isCreating ? 'text-background' : 'text-primary'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest truncate w-full text-center">
+                {t.config.name}
+              </span>
+            </button>
+          ))}
+          {/* Fill empty slots to maintain constant width if less than 5 tournaments */}
+          {Array.from({ length: pageSize - paginatedTournaments.length }).map((_, i) => (
+            <div key={`empty-${i}`} className="flex-1 min-w-0 h-[52px] rounded-2xl border border-white/5 opacity-20 bg-white/[0.02] border-dashed" />
+          ))}
+        </div>
+
+        {totalPages > 1 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTournamentPage(prev => Math.min(totalPages - 1, prev + 1))}
+            disabled={tournamentPage === totalPages - 1}
+            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-primary disabled:opacity-10 transition-all shrink-0"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        )}
       </div>
 
       <div className="tournament-card p-10 relative overflow-hidden">

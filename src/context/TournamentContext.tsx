@@ -132,11 +132,11 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
                 };
             });
 
-            // Filter expired (> 48h for more buffer)
+            // Filter expired (> 30 days for archive)
             const now = Date.now();
             const valid = mapped.filter(t => {
                 if (t.phase === 'finished' && t.finishedAt) {
-                    return (now - t.finishedAt) < (48 * 60 * 60 * 1000);
+                    return (now - t.finishedAt) < (30 * 24 * 60 * 60 * 1000);
                 }
                 return true;
             });
@@ -167,7 +167,33 @@ export const TournamentProvider: React.FC<TournamentProviderProps> = ({ children
 
     useEffect(() => {
         loadTournaments();
-    }, []); // Run on mount only
+
+        // --- REALTIME SUBSCRIPTION ---
+        // Listen for changes in tournaments and registrations to keep all clients in sync
+        const channel = supabase
+            .channel('schema-db-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'tournaments' },
+                () => {
+                    console.log('Realtime discovery: Tournament updated');
+                    loadTournaments();
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'registrations' },
+                () => {
+                    console.log('Realtime discovery: Registration updated');
+                    loadTournaments();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [loadTournaments]); // Run on mount and keep sync
 
 
     // --- CRUD Operations ---

@@ -328,3 +328,62 @@ export const generateBracket = (rankedTeams: RankedTeam[], groups: Group[]): Bra
 export const formatMatchScore = (result: MatchResult): string => {
   return result.sets.map(set => `${set.team1}-${set.team2}`).join(' / ');
 };
+export const calculatePlayerStats = (tournaments: any[], playerId: string) => {
+  let matchesPlayed = 0;
+  let matchesWon = 0;
+  let setsWon = 0;
+  let totalSets = 0;
+  let gamesWon = 0;
+  let totalGames = 0;
+  let tournamentsPlayed = 0;
+
+  tournaments.forEach(t => {
+    const myTeam = t.teams.find((team: any) =>
+      String(team.player1Id) === String(playerId) ||
+      String(team.player2Id) === String(playerId)
+    );
+
+    if (myTeam) {
+      tournamentsPlayed++;
+      const allMatches = [
+        ...t.groups.flatMap((g: any) => g.matches),
+        ...t.bracket
+      ];
+
+      allMatches.forEach((m: any) => {
+        const isP1 = String(m.team1Id) === String(myTeam.id);
+        const isP2 = String(m.team2Id) === String(myTeam.id);
+
+        if ((isP1 || isP2) && m.status === 'finished' && m.result) {
+          matchesPlayed++;
+          const isWinner = String(m.result.winner) === String(myTeam.id);
+          if (isWinner) matchesWon++;
+
+          m.result.sets.forEach((set: any) => {
+            totalSets++;
+            const pGames = isP1 ? set.team1 : set.team2;
+            const oGames = isP1 ? set.team2 : set.team1;
+            if (pGames > oGames) setsWon++;
+            gamesWon += pGames;
+            totalGames += (pGames + oGames);
+          });
+        }
+      });
+    }
+  });
+
+  const winRate = matchesPlayed > 0 ? Math.round((matchesWon / matchesPlayed) * 100) : 0;
+  const ardLevel = Math.min(5, 1 + (winRate / 25) + (tournamentsPlayed * 0.2));
+
+  return {
+    matchesPlayed,
+    matchesWon,
+    winRate,
+    setsWon,
+    totalSets,
+    gamesWon,
+    totalGames,
+    tournamentsPlayed,
+    ardLevel: parseFloat(ardLevel.toFixed(1))
+  };
+};

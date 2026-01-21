@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Header from '@/components/Header';
 import { useTournament } from '@/context/TournamentContext';
 import { useAuth } from '@/context/AuthContext';
-import { Grid3X3, GitBranch, AlertCircle, Calendar, Trophy, Settings } from 'lucide-react';
+import { Grid3X3, GitBranch, AlertCircle, Calendar, Trophy, Settings, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import GroupTable from '@/components/GroupTable';
 import MatchCard from '@/components/MatchCard';
@@ -12,8 +12,15 @@ import { Link } from 'react-router-dom';
 type Tab = 'grupos' | 'cuadro';
 
 const TorneoActivo: React.FC = () => {
-    const { activeTournament: tournament, getTeamById } = useTournament();
+    const { activeTournament: tournament, getTeamById, debugGenerateResults } = useTournament();
     const [activeTab, setActiveTab] = useState<Tab>('grupos');
+    const [generating, setGenerating] = useState(false);
+
+    const handleGenerateResults = async () => {
+        setGenerating(true);
+        await debugGenerateResults();
+        setGenerating(false);
+    };
 
     // If no active tournament or it's just in registration phase (and no groups generated)
     if (!tournament) {
@@ -36,7 +43,7 @@ const TorneoActivo: React.FC = () => {
     }
 
     const { user } = useAuth();
-    const isAdmin = sessionStorage.getItem('isAuthenticated') === 'true';
+    const isAdmin = localStorage.getItem('isAuthenticated') === 'true';
 
     // Check if user is part of the tournament
     const isParticipant = user && tournament?.teams.some(t =>
@@ -166,6 +173,32 @@ const TorneoActivo: React.FC = () => {
                 <div className="animate-slide-up">
                     {activeTab === 'grupos' ? (
                         <>
+                            {isAdmin && tournament.phase === 'groups' && tournament.groups.length > 0 && (
+                                <div className="mb-8 p-6 bg-primary/5 border border-primary/20 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative group">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <Sparkles className="w-12 h-12 text-primary" />
+                                    </div>
+                                    <div className="relative z-10 text-center md:text-left">
+                                        <h4 className="font-black text-xs uppercase tracking-[0.2em] text-primary mb-1">Panel de Control (DEBUG)</h4>
+                                        <p className="text-white/60 text-[10px] uppercase font-bold tracking-widest">¿Quieres simular todos los resultados de este torneo?</p>
+                                    </div>
+                                    <Button
+                                        onClick={handleGenerateResults}
+                                        disabled={generating}
+                                        className="relative z-10 px-8 py-6 bg-primary text-background font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-white transition-all shadow-xl shadow-primary/20 group/btn"
+                                    >
+                                        {generating ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <>
+                                                Generar Resultados Aleatorios
+                                                <Sparkles className="w-4 h-4 ml-2 group-hover/btn:rotate-12 transition-transform" />
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+
                             {tournament.groups.length === 0 ? (
                                 <div className="text-center py-20 text-muted-foreground">
                                     No hay grupos generados todavía.

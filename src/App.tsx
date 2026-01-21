@@ -21,6 +21,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import CookieConsent from "./components/CookieConsent";
 import TorneoActivo from "./pages/TorneoActivo";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/inscripcion" element={<PublicRegistration />} />
+              <Route path="/perfil" element={<Profile />} />
               <Route path="/login" element={<Login />} />
               <Route path="/login" element={<Login />} />
               <Route path="/reglamento" element={<Reglamento />} />

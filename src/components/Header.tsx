@@ -63,6 +63,7 @@ const Header: React.FC = () => {
 
   const navItems = isDashboard
     ? [
+      { path: '/organizador/dashboard', label: 'Mis Torneos', icon: Trophy },
       { path: '/organizador/inscripcion', label: 'Inscripciones', icon: Users, badge: pendingCount > 0 },
       { path: '/organizador/grupos', label: 'Grupos', icon: Grid3X3 },
       { path: '/organizador/cuadro', label: 'Cuadro Final', icon: GitBranch },
@@ -72,7 +73,9 @@ const Header: React.FC = () => {
       { path: '/', label: 'Inicio', icon: Trophy },
       { path: '/#torneos', label: 'Torneos', icon: Calendar },
       { path: '/#sobre-nosotros', label: 'Sobre Nosotros', icon: Users },
-      ...(user ? [{ path: '/competicion', label: 'Mi Torneo', icon: Lock }] : []),
+      ...(user ? [
+        { path: '/competicion', label: 'Mi Torneo', icon: Lock }
+      ] : []),
     ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
@@ -99,8 +102,8 @@ const Header: React.FC = () => {
   };
 
   const handleLogoutAdmin = () => {
-    sessionStorage.removeItem('isAuthenticated');
     localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('organizador_last_access');
     toast.success('Sesión de administrador cerrada 🔐');
   };
 
@@ -159,10 +162,10 @@ const Header: React.FC = () => {
             ) : (
               <div className="flex items-center gap-4">
                 {user ? (
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
 
                     {/* Notifications */}
-                    <div className="relative">
+                    <div className="relative mr-2">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -187,7 +190,7 @@ const Header: React.FC = () => {
                               {myRegistrations.map((reg, idx) => (
                                 <Link
                                   key={idx}
-                                  to="/inscripcion" // Or update active tournament logic? Ideally just go to registration page which handles logic based on active tournament.
+                                  to="/inscripcion"
                                   onClick={() => setIsNotificationsOpen(false)}
                                   className="block p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5"
                                 >
@@ -216,10 +219,42 @@ const Header: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="hidden md:flex flex-col items-end">
-                      <span className="text-sm font-bold text-white leading-none">{user.first_name}</span>
-                      <span className="text-[10px] text-primary uppercase tracking-wider">Jugador</span>
-                    </div>
+                    <Link to="/perfil" className="flex items-center gap-3 px-3 py-1.5 rounded-full hover:bg-white/5 transition-all group">
+                      <div className="hidden md:flex flex-col items-end">
+                        <span className="text-sm font-bold text-white leading-none group-hover:text-primary transition-colors">{user.first_name}</span>
+                        <span className="text-[10px] text-primary uppercase tracking-wider">
+                          Lvl {(() => {
+                            let matchesPlayed = 0;
+                            let matchesWon = 0;
+                            let tournamentsPlayed = 0;
+
+                            tournaments.forEach(t => {
+                              const myTeam = t.teams.find(team =>
+                                String(team.player1Id) === String(user.id) ||
+                                String(team.player2Id) === String(user.id)
+                              );
+                              if (myTeam) {
+                                tournamentsPlayed++;
+                                const allMatches = [...t.groups.flatMap(g => g.matches), ...t.bracket];
+                                allMatches.forEach(m => {
+                                  if ((String(m.team1Id) === String(myTeam.id) || String(m.team2Id) === String(myTeam.id)) && m.status === 'finished') {
+                                    matchesPlayed++;
+                                    if (String(m.result?.winner) === String(myTeam.id)) matchesWon++;
+                                  }
+                                });
+                              }
+                            });
+
+                            const winRate = matchesPlayed > 0 ? (matchesWon / matchesPlayed) * 100 : 0;
+                            return (Math.min(5, 1 + (winRate / 25) + (tournamentsPlayed * 0.2))).toFixed(1);
+                          })()}
+                        </span>
+                      </div>
+                      <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary overflow-hidden">
+                        <UserCircle className="w-6 h-6" />
+                      </div>
+                    </Link>
+
                     <Button onClick={logout} variant="ghost" size="icon" className="hover:bg-destructive/10 hover:text-destructive text-white/40 rounded-full">
                       <LogOut className="w-5 h-5" />
                     </Button>

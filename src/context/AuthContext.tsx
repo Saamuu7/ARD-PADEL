@@ -30,13 +30,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Restore session from local storage on mount
+    // Restore session and handle 24h expiration from local storage on mount
     useEffect(() => {
-        const storedUser = localStorage.getItem('ard_padel_user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-        setLoading(false);
+        const checkSession = () => {
+            const storedUser = localStorage.getItem('ard_padel_user');
+            const lastAccess = localStorage.getItem('ard_padel_last_access');
+
+            if (storedUser && lastAccess) {
+                const now = new Date().getTime();
+                const lastTime = parseInt(lastAccess);
+                const twentyFourHours = 24 * 60 * 60 * 1000;
+
+                if (now - lastTime > twentyFourHours) {
+                    // Session expired
+                    localStorage.removeItem('ard_padel_user');
+                    localStorage.removeItem('ard_padel_last_access');
+                    setUser(null);
+                    toast.info("Sesión cerrada por inactividad (24h)");
+                } else {
+                    // Session valid, update last access
+                    setUser(JSON.parse(storedUser));
+                    localStorage.setItem('ard_padel_last_access', now.toString());
+                }
+            } else if (storedUser && !lastAccess) {
+                // Migration: if user exists but no timestamp, set one now
+                setUser(JSON.parse(storedUser));
+                localStorage.setItem('ard_padel_last_access', new Date().getTime().toString());
+            }
+            setLoading(false);
+        };
+
+        checkSession();
     }, []);
 
     const login = async (email: string) => {
@@ -53,6 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             setUser(data);
             localStorage.setItem('ard_padel_user', JSON.stringify(data));
+            localStorage.setItem('ard_padel_last_access', new Date().getTime().toString());
             toast.success(`Bienvenido de nuevo, ${data.first_name}`);
             return true;
         } catch (err) {
@@ -88,15 +113,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             setUser(data);
             localStorage.setItem('ard_padel_user', JSON.stringify(data));
+            localStorage.setItem('ard_padel_last_access', new Date().getTime().toString());
             toast.success("Cuenta creada correctamente");
         } catch (error: any) {
             toast.error('Error al registrar usuario: ' + error.message);
         }
     };
 
+    const updateUser = async (updates: Partial<User>) => {
+        if (!user) return;
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .update(updates)
+                .eq('id', user.id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            setUser(data);
+            localStorage.setItem('ard_padel_user', JSON.stringify(data));
+        } catch (error: any) {
+            toast.error('Error al actualizar perfil: ' + error.message);
+        }
+    };
+
     const logout = () => {
         setUser(null);
         localStorage.removeItem('ard_padel_user');
+        localStorage.removeItem('ard_padel_last_access');
         toast.info("Has cerrado sesión");
     };
 

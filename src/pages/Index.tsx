@@ -8,17 +8,25 @@ import { useTournament } from '@/context/TournamentContext';
 import { useAuth } from '@/context/AuthContext';
 
 const Index: React.FC = () => {
-  const { tournaments, activeTournament, setActiveTournament } = useTournament();
+  const { tournaments, activeTournament, setActiveTournament, loading } = useTournament();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoginOpen, setIsLoginOpen] = React.useState(false);
+  const [currentTime, setCurrentTime] = React.useState(Date.now());
+
+  // Update current time every minute to refresh status badges
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   React.useEffect(() => {
     if (location.hash) {
       const element = document.getElementById(location.hash.replace('#', ''));
       if (element) {
-        // Small delay to ensure smooth scroll after render
         setTimeout(() => {
           element.scrollIntoView({ behavior: 'smooth' });
         }, 100);
@@ -34,6 +42,49 @@ const Index: React.FC = () => {
       setIsLoginOpen(true);
     }
   };
+
+  const isTournamentStarted = (t: any) => {
+    try {
+      const dateStr = t.config.date; // Can be YYYY-MM-DD or DD/MM/YYYY
+      const timeStr = t.config.time; // HH:MM
+
+      let year, month, day;
+
+      if (dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        if (parts[0].length === 4) {
+          [year, month, day] = parts.map(Number);
+        } else {
+          [day, month, year] = parts.map(Number);
+        }
+      } else if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts[0].length === 4) {
+          [year, month, day] = parts.map(Number);
+        } else {
+          [day, month, year] = parts.map(Number);
+        }
+      } else {
+        return false;
+      }
+
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const startDate = new Date(year, month - 1, day, hours, minutes);
+
+      return !isNaN(startDate.getTime()) && currentTime >= startDate.getTime();
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Filter tournaments: Hide if finished > 1 hour
+  const visibleTournaments = tournaments.filter(t => {
+    if (t.phase === 'finished' && t.finishedAt) {
+      const oneHour = 60 * 60 * 1000;
+      return (currentTime - t.finishedAt) < oneHour;
+    }
+    return true;
+  });
 
   const organizers = [
     {
@@ -74,13 +125,16 @@ const Index: React.FC = () => {
 
         <div className="container mx-auto px-4 relative z-30 pt-5 pb-52">
           <div className="max-w-5xl mx-auto flex flex-col items-center text-center">
-            <div className="inline-flex items-center gap-3 px-8 py-3 bg-white/5 backdrop-blur-3xl rounded-full border border-white/10 text-primary mb-12 animate-fade-in shadow-2xl">
-              <TrophyIcon className="w-5 h-5 text-accent animate-bounce" />
-              <span className="uppercase tracking-[0.5em] text-[10px] font-black text-white/80 shrink-0">Torneos Amateur y Eventos</span>
+            <div className="flex flex-col items-center gap-6 animate-fade-in mb-12">
+              <div className="inline-flex items-center gap-3 px-6 py-2 bg-primary/10 backdrop-blur-3xl rounded-full border border-primary/20 text-primary shadow-[0_0_30px_rgba(25,231,142,0.2)]">
+                <ShieldCheck className="w-4 h-4 text-primary animate-pulse" />
+                <span className="uppercase tracking-[0.4em] text-[9px] font-black">Official ARD Competition System</span>
+              </div>
             </div>
 
-            <h1 className="font-display font-black text-5xl sm:text-7xl md:text-[10rem] text-white mb-10 tracking-tighter animate-slide-up leading-[0.9] md:leading-[0.75] uppercase">
-              ARD <span className="text-primary italic drop-shadow-[0_0_50px_rgba(25,231,142,0.4)]">PÁDEL</span>
+            <h1 className="font-display font-black text-5xl sm:text-7xl md:text-[11rem] text-white mb-10 tracking-[1.5rem] md:tracking-[-0.04em] animate-slide-up leading-[0.8] md:leading-[0.75] uppercase relative">
+              ARD <span className="text-primary italic drop-shadow-[0_0_80px_rgba(25,231,142,0.6)] hover:text-accent transition-colors duration-700">PÁDEL</span>
+              <div className="absolute -top-10 -right-10 w-24 h-24 bg-accent/20 blur-3xl rounded-full animate-pulse pointer-events-none" />
             </h1>
 
             <p className="text-lg md:text-3xl text-muted-foreground mb-16 max-w-3xl mx-auto animate-slide-up transition-all duration-700 delay-100 font-medium leading-relaxed opacity-90 text-balance px-4">
@@ -101,38 +155,95 @@ const Index: React.FC = () => {
 
         {/* Mouse Scroll Indicator */}
         <div
-          className="absolute bottom-8 sm:bottom-16 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-3 cursor-pointer group"
-          onClick={() => document.getElementById(tournaments.length > 0 ? 'torneos' : 'sobre-nosotros')?.scrollIntoView({ behavior: 'smooth' })}
+          className="absolute bottom-32 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2 cursor-pointer group"
+          onClick={() => document.getElementById(visibleTournaments.length > 0 ? 'torneos' : 'sobre-nosotros')?.scrollIntoView({ behavior: 'smooth' })}
         >
-          <div className="w-[26px] h-[45px] rounded-full border-2 border-white/20 flex justify-center p-1 group-hover:border-primary/50 transition-colors duration-500">
-            <div className="w-1 h-2 bg-primary rounded-full animate-mouse-wheel" />
+          <div className="w-[22px] h-[38px] rounded-full border-2 border-white/10 flex justify-center p-1 group-hover:border-primary/50 transition-colors duration-500">
+            <div className="w-1 h-1.5 bg-primary rounded-full animate-mouse-wheel" />
           </div>
-          <span className="text-[9px] uppercase font-black tracking-[0.4em] text-white/30 group-hover:text-primary transition-colors duration-500">Scroll</span>
+          <span className="text-[8px] uppercase font-black tracking-[0.3em] text-white/20 group-hover:text-primary transition-colors duration-500">Explorar</span>
+        </div>
+
+        {/* Partners Section */}
+        <div className="absolute bottom-6 left-0 w-full z-40 hidden sm:block">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col items-center gap-6 border-t border-white/5 pt-8 opacity-20 hover:opacity-100 transition-all duration-700 group/sponsors">
+              <span className="text-[9px] font-black uppercase tracking-[0.5em] text-white/40">Official Partners & Sponsors</span>
+              <div className="flex flex-wrap justify-center items-center gap-16 grayscale">
+                <div className="flex items-center gap-3 font-black italic text-lg tracking-tighter text-white">
+                  <div className="w-7 h-7 rounded bg-primary/20 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-primary" />
+                  </div>
+                  VOLT
+                </div>
+                <div className="flex items-center gap-3 font-black text-lg tracking-tighter text-white">
+                  <Trophy className="w-7 h-7 text-accent" />
+                  MASTERS
+                </div>
+                <div className="flex items-center gap-3 font-black italic text-lg tracking-[0.3em] text-white">
+                  ELITE
+                </div>
+                <div className="flex items-center gap-3 font-black text-lg tracking-tighter text-white">
+                  <Star className="w-7 h-7 text-primary" />
+                  SESEÑA
+                </div>
+                <div className="flex items-center gap-3 font-black text-lg tracking-tighter text-white">
+                  <ShieldCheck className="w-7 h-7 text-accent" />
+                  FED. ARD
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Tournaments Section */}
-      <section id="torneos" className="relative">
-        {tournaments.length > 0 ? (
-          <div className="py-20 sm:py-32 relative overflow-hidden bg-secondary/10">
-            <div className="container mx-auto px-4">
-              <div className="flex flex-col md:flex-row items-baseline justify-between mb-20 gap-8 border-b border-white/5 pb-10">
-                <div>
-                  <h2 className="text-primary font-black uppercase tracking-[0.5em] text-xs mb-4">Competiciones Activas</h2>
-                  <h3 className="font-display font-black text-4xl sm:text-6xl text-foreground leading-none tracking-tighter uppercase">
-                    ELIGE TU <span className="text-white/30 italic">BATALLA.</span>
-                  </h3>
-                </div>
-              </div>
+      <section id="torneos" className="relative group/section">
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#020617] to-transparent z-10" />
 
-              <div className="grid gap-12 max-w-6xl mx-auto">
-                {tournaments.map((t) => {
+        <div className="py-20 sm:py-32 relative overflow-hidden bg-secondary/10">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-baseline justify-between mb-20 gap-8 border-b border-white/5 pb-10">
+              <div className="animate-fade-in">
+                <h2 className="text-primary font-black uppercase tracking-[0.5em] text-xs mb-4">Competiciones Activas</h2>
+                <h3 className="font-display font-black text-4xl sm:text-6xl text-foreground leading-none tracking-tighter uppercase">
+                  ELIGE TU <span className="text-white/30 italic">BATALLA.</span>
+                </h3>
+              </div>
+            </div>
+
+            <div className="grid gap-12 max-w-6xl mx-auto">
+              {loading ? (
+                // SKELETON LOADERS
+                [1, 2].map((i) => (
+                  <div key={i} className="relative overflow-hidden rounded-[3rem] bg-white/5 border border-white/10 h-[500px] animate-pulse">
+                    <div className="grid lg:grid-cols-2 h-full">
+                      <div className="bg-white/5 flex-1" />
+                      <div className="p-12 space-y-6">
+                        <div className="h-4 w-32 bg-white/10 rounded" />
+                        <div className="h-12 w-3/4 bg-white/10 rounded" />
+                        <div className="h-20 w-full bg-white/10 rounded" />
+                        <div className="grid grid-cols-2 gap-6 pt-8">
+                          <div className="h-12 bg-white/10 rounded-xl" />
+                          <div className="h-12 bg-white/10 rounded-xl" />
+                        </div>
+                        <div className="h-16 w-full bg-white/10 rounded-full mt-auto" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : visibleTournaments.length > 0 ? (
+                visibleTournaments.map((t) => {
                   const myTeam = user
                     ? t.teams.find(team => String(team.player1Id) === String(user.id) || String(team.player2Id) === String(user.id))
                     : null;
 
                   const isRegistered = myTeam && myTeam.status !== 'rejected';
                   const isApproved = myTeam?.status === 'approved';
+
+                  const started = isTournamentStarted(t);
+                  const isFinished = t.phase === 'finished';
+                  const isInProgress = !isFinished && started;
 
                   return (
                     <div key={t.id} className="group relative overflow-hidden rounded-[2rem] sm:rounded-[3rem] bg-card/50 backdrop-blur-3xl border border-white/5 shadow-2xl transition-all duration-700 hover:border-primary/30 hover:shadow-primary/10">
@@ -146,7 +257,7 @@ const Index: React.FC = () => {
                           <div className="absolute inset-0 bg-gradient-to-r from-card/80 to-transparent lg:hidden" />
 
                           {/* Date/Time Badge */}
-                          <div className="absolute top-4 left-4 sm:top-8 sm:left-8 flex gap-3">
+                          <div className="absolute top-4 left-4 sm:top-8 sm:left-8 flex flex-wrap gap-3">
                             <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-background/80 backdrop-blur-md rounded-xl border border-white/10 flex items-center gap-2">
                               <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
                               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white">{t.config.date}</span>
@@ -159,12 +270,21 @@ const Index: React.FC = () => {
                         </div>
 
                         <div className="p-8 sm:p-12 lg:p-16 flex flex-col justify-center">
-                          <div className="flex items-center gap-3 mb-6">
-                            <Star className="w-5 h-5 text-accent fill-accent" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Competición ARD</span>
+                          <div className="flex flex-wrap items-center gap-4 mb-6">
+                            <div className="flex items-center gap-3">
+                              <Star className="w-5 h-5 text-accent fill-accent" />
+                              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Competición ARD</span>
+                            </div>
+
+                            {isInProgress && (
+                              <div className="px-3 py-1 bg-red-500/10 rounded-full border border-red-500/30 flex items-center gap-2 animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                                <span className="text-[9px] font-black uppercase tracking-widest text-red-500">Live</span>
+                              </div>
+                            )}
                           </div>
 
-                          <h3 className="font-display font-black text-3xl sm:text-4xl mb-6 uppercase tracking-tighter leading-tight">
+                          <h3 className="font-display font-black text-3xl sm:text-4xl mb-6 uppercase tracking-tighter leading-tight group-hover:text-primary transition-colors">
                             {t.config.name}
                           </h3>
 
@@ -173,22 +293,22 @@ const Index: React.FC = () => {
                           </p>
 
                           <div className="grid grid-cols-2 gap-6 mb-12 border-t border-white/5 pt-8">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <div className="flex items-center gap-4 group/stat">
+                              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover/stat:bg-primary/20 transition-colors">
                                 <Target className="w-5 h-5 text-primary" />
                               </div>
                               <div>
-                                <p className="text-[9px] uppercase font-black tracking-widest text-white/30">Plazas</p>
+                                <p className="text-[8px] uppercase font-black tracking-widest text-white/30">Plazas</p>
                                 <p className="font-bold text-white text-base">{t.teams.length} Parejas</p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                            <div className="flex items-center gap-4 group/stat">
+                              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center group-hover/stat:bg-accent/20 transition-colors">
                                 <ShieldCheck className="w-5 h-5 text-accent" />
                               </div>
                               <div>
-                                <p className="text-[9px] uppercase font-black tracking-widest text-white/30">Fase</p>
-                                <p className="font-bold text-white text-base uppercase tracking-wider">
+                                <p className="text-[8px] uppercase font-black tracking-widest text-white/30">Fase</p>
+                                <p className="font-bold text-white text-[11px] sm:text-xs uppercase tracking-wider">
                                   {t.phase === 'registration'
                                     ? (t.config.registrationClosed ? 'Inscripciones Cerradas' : 'Inscripciones Abiertas')
                                     : t.phase === 'groups' ? 'Fase de Grupos'
@@ -237,26 +357,24 @@ const Index: React.FC = () => {
                       </div>
                     </div>
                   );
-                })}
-              </div>
+                })
+              ) : (
+                <div className="py-20 text-center animate-fade-in">
+                  <div className="inline-flex items-center gap-3 px-6 py-2 bg-primary/10 rounded-full border border-primary/20 text-primary mb-8">
+                    <Calendar className="w-4 h-4" />
+                    <span className="uppercase tracking-widest text-[10px] font-black italic">Próximamente</span>
+                  </div>
+                  <h2 className="font-display font-black text-5xl md:text-7xl text-white/10 uppercase tracking-tighter mb-6">
+                    SIN TORNEOS <br /> <span className="text-white/20">ACTIVOS.</span>
+                  </h2>
+                  <p className="text-muted-foreground max-w-xl mx-auto text-lg italic opacity-60">
+                    Estamos preparando la próxima gran competición.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-        ) : (
-          <div className="py-40 bg-white/[0.01] border-y border-white/5">
-            <div className="container mx-auto px-4 text-center">
-              <div className="inline-flex items-center gap-3 px-6 py-2 bg-primary/10 rounded-full border border-primary/20 text-primary mb-8">
-                <Calendar className="w-4 h-4" />
-                <span className="uppercase tracking-widest text-[10px] font-black italic">Próximamente</span>
-              </div>
-              <h2 className="font-display font-black text-5xl md:text-7xl text-white/10 uppercase tracking-tighter mb-6">
-                SIN TORNEOS <br /> <span className="text-white/20">ACTIVOS.</span>
-              </h2>
-              <p className="text-muted-foreground max-w-xl mx-auto text-lg italic opacity-60">
-                Estamos preparando la próxima gran competición. Mantente atento a nuestras redes para ser el primero en enterarte.
-              </p>
-            </div>
-          </div>
-        )}
+        </div>
       </section>
 
       {/* About Section - Professional Bento Style */}

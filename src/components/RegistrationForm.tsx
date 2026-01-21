@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { UserPlus, Users, Search, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { UserPlus, Users, Search, CheckCircle2, Mail, Phone, User, Star, Loader2, Sparkles, AlertCircle, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTournament } from '@/context/TournamentContext';
 import { useAuth } from '@/context/AuthContext';
@@ -41,7 +41,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ isPublic = false, i
 
   // Validators
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isValidPhone = (phone: string) => /^\d{9}$/.test(phone);
+  const isValidPhone = (phone: string) => /^\d{9}$/.test(phone) || /^\+?\d{9,13}$/.test(phone);
 
   const checkPartnerEmail = async () => {
     if (!p2Email || !isValidEmail(p2Email)) return;
@@ -89,7 +89,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ isPublic = false, i
       return;
     }
     if (!isValidPhone(p2Phone)) {
-      toast.error("El teléfono del Jugador 2 debe tener 9 dígitos");
+      toast.error("El teléfono del Jugador 2 no es válido");
       return;
     }
 
@@ -104,9 +104,14 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ isPublic = false, i
         return;
       }
       if (!isValidPhone(p1Phone)) {
-        toast.error("El teléfono del Jugador 1 debe tener 9 dígitos");
+        toast.error("El teléfono del Jugador 1 no es válido");
         return;
       }
+    }
+
+    if (!category) {
+      toast.error("Debes seleccionar una categoría");
+      return;
     }
 
     try {
@@ -152,14 +157,26 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ isPublic = false, i
 
   if (!user && !isAdmin) {
     return (
-      <div className="tournament-card text-center py-12">
-        <Users className="w-16 h-16 text-primary mx-auto mb-4 opacity-50" />
-        <h3 className="text-xl font-bold mb-4">Inicia sesión para inscribirte</h3>
-        <p className="text-muted-foreground mb-6">Necesitas una cuenta para gestionar tus torneos.</p>
-        <Button onClick={() => setIsLoginOpen(true)} className="btn-primary-gradient">
-          Identifícate / Regístrate
-        </Button>
-        <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <div className="tournament-card text-center py-20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[50px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-accent/10 blur-[50px] pointer-events-none" />
+
+        <div className="relative z-10 animate-fade-in">
+          <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-8 border border-white/10 group">
+            <Users className="w-10 h-10 text-white/20 group-hover:text-primary transition-colors duration-500" />
+          </div>
+          <h2 className="text-2xl font-black uppercase tracking-tighter text-white mb-2 leading-none">Casi listo para entrar</h2>
+          <p className="text-[10px] text-white/40 uppercase tracking-[0.3em] font-bold mb-10 max-w-xs mx-auto">
+            Identifícate para gestionar tus inscripciones y torneos
+          </p>
+          <Button
+            onClick={() => setIsLoginOpen(true)}
+            className="btn-primary-gradient px-12 py-8 text-xs font-black uppercase tracking-widest gap-3"
+          >
+            <User className="w-4 h-4" /> Entrar / Registrarse
+          </Button>
+          <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+        </div>
       </div>
     );
   }
@@ -168,144 +185,255 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ isPublic = false, i
 
   if (isSuccess && !isAdmin) {
     return (
-      <div className="tournament-card text-center py-12 animate-fade-in border-green-500/20 bg-green-500/5">
-        <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6 animate-bounce-slow">
-          <CheckCircle2 className="w-10 h-10 text-green-500" />
+      <div className="tournament-card text-center py-20 animate-fade-in border-primary/20 bg-primary/5 relative overflow-hidden">
+        <div className="absolute inset-0 bg-primary/5 blur-[100px]" />
+
+        <div className="relative z-10">
+          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-8 border border-primary/20 animate-float">
+            <CheckCircle2 className="w-12 h-12 text-primary" />
+          </div>
+          <h2 className="font-display font-black text-4xl text-white uppercase tracking-tighter mb-4 leading-none">
+            ¡Inscripción Enviada!
+          </h2>
+          <p className="text-[10px] text-primary uppercase tracking-[0.4em] font-black mb-10">
+            Fase de confirmación activada
+          </p>
+          <p className="text-sm text-white/40 mb-10 max-w-md mx-auto leading-relaxed">
+            Tu solicitud está en manos de la organización. Te avisaremos cuando se confirme tu plaza.
+          </p>
+          <Button
+            onClick={() => { navigate('/'); window.location.href = '/'; }}
+            className="btn-primary-gradient px-16 py-8 text-xs font-black uppercase tracking-widest shadow-2xl shadow-primary/20"
+          >
+            Volver al Inicio
+          </Button>
         </div>
-        <h2 className="font-display font-black text-3xl text-foreground uppercase tracking-tight mb-4">
-          ¡Inscripción Confirmada!
-        </h2>
-        <p className="text-muted-foreground mb-8 text-lg max-w-md mx-auto leading-relaxed">
-          Has inscrito a tu pareja correctamente. Tu compañero ha sido registrado.
-        </p>
-        <Button
-          onClick={() => { navigate('/'); window.location.href = '/'; }}
-          className="btn-primary-gradient px-12 py-6 text-lg font-black uppercase tracking-widest"
-        >
-          Continuar
-        </Button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="tournament-card">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <UserPlus className="w-5 h-5 text-primary" />
-        </div>
-        <h2 className="font-display font-bold text-xl text-foreground">
-          {isAdmin ? 'Inscribir Nueva Pareja (Manual)' : (isPublic ? 'Tu Inscripción' : 'Inscribir Pareja')}
-        </h2>
-      </div>
+    <form onSubmit={handleSubmit} className="tournament-card p-0 overflow-hidden relative border border-white/10">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] pointer-events-none" />
 
-      <div className="space-y-6">
-        {/* Jugador 1 */}
-        {isAdmin ? (
-          <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-            <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-2">Jugador 1</h3>
-            <div className="flex-1">
-              <Input type="email" value={p1Email} onChange={(e) => setP1Email(e.target.value)} placeholder="Email Jugador 1" className="bg-white/5 border-white/10 mb-2" required />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input value={p1FirstName} onChange={(e) => setP1FirstName(e.target.value)} placeholder="Nombre" className="bg-white/5 border-white/10" required />
-              <Input value={p1LastName} onChange={(e) => setP1LastName(e.target.value)} placeholder="Apellidos" className="bg-white/5 border-white/10" required />
-            </div>
-            <Input value={p1Phone} onChange={(e) => setP1Phone(e.target.value)} placeholder="Teléfono" className="bg-white/5 border-white/10" />
-          </div>
-        ) : (
-          <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-xs font-black uppercase tracking-widest text-primary">Jugador 1 (Tú)</h3>
-              <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">Conectado</span>
-            </div>
-            <div className="text-lg font-bold">{user?.first_name} {user?.last_name}</div>
-            <div className="text-sm text-muted-foreground">{user?.email}</div>
-          </div>
-        )}
-
-        {/* Jugador 2 (Compañero) */}
-        <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-          <h3 className="text-xs font-black uppercase tracking-widest text-primary mb-2">Jugador 2 {isAdmin ? '' : '(Compañero)'}</h3>
-
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Label className="text-xs text-muted-foreground mb-1 block">Correo Electrónico</Label>
-              <Input
-                type="email"
-                value={p2Email}
-                onChange={(e) => setP2Email(e.target.value)}
-                onBlur={checkPartnerEmail}
-                placeholder="Email Jugador 2"
-                className="bg-white/5 border-white/10"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Nombre</Label>
-              <Input
-                value={p2FirstName}
-                onChange={(e) => setP2FirstName(e.target.value)}
-                placeholder="Nombre"
-                className="bg-white/5 border-white/10"
-                readOnly={isP2Found}
-                required
-              />
+      <div className="p-8 md:p-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+              <UserPlus className="w-7 h-7 text-primary" />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1 block">Apellidos</Label>
-              <Input
-                value={p2LastName}
-                onChange={(e) => setP2LastName(e.target.value)}
-                placeholder="Apellidos"
-                className="bg-white/5 border-white/10"
-                readOnly={isP2Found}
-                required
-              />
+              <h2 className="font-display font-black text-3xl text-white uppercase tracking-tighter leading-none mb-1">
+                {isAdmin ? 'Inscripción Manual' : 'Formulario de Inscripción'}
+              </h2>
+              <p className="text-[9px] text-white/40 uppercase tracking-[0.3em] font-bold">
+                {activeTournament?.config.name}
+              </p>
             </div>
           </div>
 
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1 block">Teléfono</Label>
-            <Input
-              value={p2Phone}
-              onChange={(e) => setP2Phone(e.target.value)}
-              placeholder="Telefono"
-              className="bg-white/5 border-white/10"
-              readOnly={isP2Found}
-            />
+          <div className="flex items-center gap-3 px-6 py-3 bg-white/5 rounded-2xl border border-white/5">
+            <Clock className="w-4 h-4 text-primary animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Inscripciones Abiertas</span>
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Nivel / Categoría</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-medium text-white focus:outline-none focus:border-primary/50 transition-colors"
-          >
-            <option value="" className="bg-[#0a0a0a] text-white">Seleccionar nivel</option>
-            <option value="Iniciación" className="bg-[#0a0a0a] text-white">Iniciación</option>
-            <option value="Nivel Medio" className="bg-[#0a0a0a] text-white">Nivel Medio</option>
-          </select>
+        <div className="grid md:grid-cols-2 gap-12">
+          {/* Jugador 1 */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary border border-primary/20">01</span>
+              <h3 className="text-xs font-black uppercase tracking-widest text-white/60">Jugador Principal</h3>
+            </div>
+
+            {isAdmin ? (
+              <div className="space-y-4 animate-fade-in">
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Correo Electrónico</Label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
+                    <input
+                      type="email"
+                      value={p1Email}
+                      onChange={(e) => setP1Email(e.target.value)}
+                      placeholder="Email Jugador 1"
+                      className="input-sport pl-12 py-3 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Nombre</Label>
+                    <input
+                      value={p1FirstName}
+                      onChange={(e) => setP1FirstName(e.target.value)}
+                      placeholder="Nombre"
+                      className="input-sport py-3 text-sm"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Apellidos</Label>
+                    <input
+                      value={p1LastName}
+                      onChange={(e) => setP1LastName(e.target.value)}
+                      placeholder="Apellidos"
+                      className="input-sport py-3 text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Teléfono</Label>
+                  <div className="relative group">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-primary transition-colors" />
+                    <input value={p1Phone} onChange={(e) => setP1Phone(e.target.value)} placeholder="Teléfono" className="input-sport pl-12 py-3 text-sm" />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 bg-primary/5 rounded-[2rem] border border-primary/20 relative group overflow-hidden">
+                <div className="absolute top-0 right-0 p-4">
+                  <ShieldCheck className="w-5 h-5 text-primary opacity-20" />
+                </div>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden">
+                    <User className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em]">Conectado como</p>
+                    <h4 className="text-xl font-black text-white">{user?.first_name} {user?.last_name}</h4>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-white/40 text-xs">
+                  <Mail className="w-3.5 h-3.5" />
+                  {user?.email}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Jugador 2 */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-[10px] font-black text-accent border border-accent/20">02</span>
+              <h3 className="text-xs font-black uppercase tracking-widest text-white/60">Datos del Compañero</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Correo Electrónico</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-accent transition-colors" />
+                  <input
+                    type="email"
+                    value={p2Email}
+                    onChange={(e) => setP2Email(e.target.value)}
+                    onBlur={checkPartnerEmail}
+                    placeholder="jugador2@correo.com"
+                    className="input-sport pl-12 py-3 text-sm focus:ring-accent/50 focus:border-accent/50"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Nombre</Label>
+                  <input
+                    value={p2FirstName}
+                    onChange={(e) => setP2FirstName(e.target.value)}
+                    placeholder="Nombre"
+                    className="input-sport py-3 text-sm"
+                    readOnly={isP2Found}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Apellidos</Label>
+                  <input
+                    value={p2LastName}
+                    onChange={(e) => setP2LastName(e.target.value)}
+                    placeholder="Apellidos"
+                    className="input-sport py-3 text-sm"
+                    readOnly={isP2Found}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Teléfono (WhatsApp)</Label>
+                <div className="relative group">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-accent transition-colors" />
+                  <input
+                    value={p2Phone}
+                    onChange={(e) => setP2Phone(e.target.value)}
+                    placeholder="+34 600 000 000"
+                    className="input-sport pl-12 py-3 text-sm focus:ring-accent/50 focus:border-accent/50"
+                    readOnly={isP2Found}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Button
-          type="submit"
-          className="w-full btn-primary-gradient py-6 text-base"
-          disabled={!activeTournament || (isClosed && !isAdmin) || searching}
-        >
-          <Users className="w-5 h-5 mr-2" />
-          {searching ? 'Procesando...' : (isAdmin ? 'Añadir Pareja' : 'Confirmar Inscripción')}
-        </Button>
-        {isClosed && !isAdmin && (
-          <p className="text-sm text-center text-primary animate-fade-in">
-            Las inscripciones para este torneo no están disponibles actualmente.
-          </p>
-        )}
+        <div className="mt-12 py-10 border-t border-white/5">
+          <div className="max-w-md mx-auto space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Star className="w-5 h-5 text-accent" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-white">Configuración Técnica</h3>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] uppercase font-bold tracking-widest text-white/40 ml-1">Categoría / Nivel de Juego</Label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="input-sport py-4 text-sm font-black uppercase tracking-widest"
+                  required
+                >
+                  <option value="" className="bg-[#0a0a0a] text-white/20 italic">Seleccionar nivel oficial</option>
+                  <option value="Iniciación" className="bg-[#0a0a0a] text-white">Iniciación</option>
+                  <option value="Nivel Medio" className="bg-[#0a0a0a] text-white">Nivel Medio</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <Button
+                type="submit"
+                className="w-full btn-primary-gradient py-8 text-sm font-black uppercase tracking-[0.2em] shadow-2xl"
+                disabled={!activeTournament || (isClosed && !isAdmin) || searching}
+              >
+                {searching ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <>
+                    {isAdmin ? 'Añadir Pareja Oficial' : 'Inscribirse al Torneo'}
+                    <ArrowRight className="w-5 h-5 ml-3" />
+                  </>
+                )}
+              </Button>
+
+              {isClosed && !isAdmin ? (
+                <div className="flex items-center justify-center gap-3 p-4 bg-destructive/10 rounded-2xl border border-destructive/20 text-destructive animate-pulse">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Inscripciones bloqueadas</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-3 py-2 text-white/20">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Registro seguro ARD SYSTEM</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </form>
   );

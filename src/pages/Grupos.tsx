@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Grid3X3, AlertCircle, Play, RefreshCw, Trophy, GitBranch, Settings, Layers } from 'lucide-react';
+import { Grid3X3, AlertCircle, Play, RefreshCw, Trophy, GitBranch, Settings, Layers, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import GroupTable from '@/components/GroupTable';
@@ -215,8 +215,8 @@ const Grupos: React.FC = () => {
                 key={level}
                 onClick={() => setActiveLevel(level)}
                 className={`px-8 py-4 rounded-[1.5rem] text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-500 flex items-center gap-3 ${activeLevel === level
-                    ? 'bg-primary text-background shadow-[0_0_25px_rgba(25,231,142,0.3)]'
-                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                  ? 'bg-primary text-background shadow-[0_0_25px_rgba(25,231,142,0.3)]'
+                  : 'text-white/40 hover:text-white hover:bg-white/5'
                   }`}
               >
                 <Layers className={`w-4 h-4 ${activeLevel === level ? 'text-background' : 'text-primary'}`} />
@@ -228,6 +228,34 @@ const Grupos: React.FC = () => {
 
         {/* Results for Selected Category */}
         <div className="space-y-12 animate-fade-in">
+          {tournament.phase === 'groups' && tournament.groups.length > 0 && !allGroupsComplete && (
+            <div className="p-8 bg-primary/5 border border-primary/20 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Sparkles className="w-20 h-20 text-primary" />
+              </div>
+              <div className="relative z-10 text-center md:text-left">
+                <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
+                  <div className="px-3 py-1 bg-primary/20 rounded-lg">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Modo Debug</span>
+                  </div>
+                  <h4 className="font-black text-lg text-white uppercase tracking-tighter">Simulador de Competición</h4>
+                </div>
+                <p className="text-white/40 text-[11px] uppercase font-bold tracking-widest max-w-sm">Rellena automáticamente todos los partidos pendientes con resultados aleatorios para avanzar al cuadro final.</p>
+              </div>
+              <Button
+                onClick={() => {
+                  if (window.confirm('¿Generar resultados aleatorios para TODOS los partidos pendientes?')) {
+                    debugGenerateResults();
+                  }
+                }}
+                className="relative z-10 px-10 py-8 bg-primary text-background font-black uppercase tracking-widest text-xs rounded-2xl hover:bg-white transition-all shadow-2xl shadow-primary/20 group/btn"
+              >
+                Generar Resultados
+                <Sparkles className="w-5 h-5 ml-3 group-hover/btn:rotate-12 transition-transform" />
+              </Button>
+            </div>
+          )}
+
           {levels.length === 0 ? (
             <div className="py-20 text-center space-y-4 tournament-card">
               <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto" />

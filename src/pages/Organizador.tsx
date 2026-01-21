@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, Users, Grid3X3, GitBranch, ArrowRight, Sparkles, Zap, Shield, ChevronRight, Calendar, Clock, Settings } from 'lucide-react';
+import { Trophy, Users, Grid3X3, GitBranch, ArrowRight, Sparkles, Zap, Shield, Calendar, Clock, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTournament } from '@/context/TournamentContext';
 import Header from '@/components/Header';
@@ -30,6 +30,24 @@ const Organizador: React.FC = () => {
             description: 'Estadísticas detalladas, control de mejores terceros y rankings dinámicos.',
         },
     ];
+
+    // Logic to separate active and finished tournaments
+    const currentTime = Date.now();
+    const oneHour = 60 * 60 * 1000;
+
+    const activeTournaments = tournaments.filter(t => {
+        if (t.phase === 'finished' && t.finishedAt) {
+            return (currentTime - t.finishedAt) < oneHour;
+        }
+        return true;
+    });
+
+    const finishedTournaments = tournaments.filter(t => {
+        if (t.phase === 'finished' && t.finishedAt) {
+            return (currentTime - t.finishedAt) >= oneHour;
+        }
+        return false;
+    });
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -80,10 +98,16 @@ const Organizador: React.FC = () => {
                 </div>
             </section>
 
-            {/* Real-time Status Area */}
-            {tournaments.length > 0 && (
+            {/* Active Tournaments Section */}
+            {activeTournaments.length > 0 && (
                 <section className="container mx-auto px-4 -mt-20 mb-32 relative z-20 space-y-12">
-                    {tournaments.map((tournament) => (
+                    <div className="max-w-5xl mx-auto mb-8">
+                        <h2 className="text-primary font-black uppercase tracking-[0.4em] text-xs flex items-center gap-3 mb-2">
+                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            Torneos Activos
+                        </h2>
+                    </div>
+                    {activeTournaments.map((tournament) => (
                         <div key={tournament.id} className="group relative overflow-hidden rounded-[3rem] bg-card/60 backdrop-blur-3xl border border-white/10 shadow-2xl transition-all duration-700 hover:border-primary/30 max-w-5xl mx-auto">
                             <div className="flex flex-col lg:flex-row">
                                 {/* Image Part */}
@@ -96,9 +120,10 @@ const Organizador: React.FC = () => {
                                     <div className="absolute inset-0 bg-gradient-to-t from-card lg:bg-gradient-to-r lg:from-transparent lg:to-card/20" />
                                     <div className="absolute top-6 left-6 flex flex-col gap-2">
                                         <div className={`px-4 py-2 rounded-full border text-[9px] font-black uppercase tracking-widest backdrop-blur-md ${tournament.config.registrationClosed ? 'bg-destructive/10 border-destructive/20 text-destructive' : 'bg-primary/10 border-primary/20 text-primary'}`}>
-                                            {tournament.phase === 'registration'
-                                                ? (tournament.config.registrationClosed ? 'Inscripciones Cerradas' : 'Inscripciones Abiertas')
-                                                : 'Torneo en Curso'}
+                                            {tournament.phase === 'finished' ? 'Finalizado (Reciente)' :
+                                                tournament.phase === 'registration'
+                                                    ? (tournament.config.registrationClosed ? 'Inscripciones Cerradas' : 'Inscripciones Abiertas')
+                                                    : 'Torneo en Curso'}
                                         </div>
                                     </div>
                                 </div>
@@ -153,6 +178,46 @@ const Organizador: React.FC = () => {
                             </div>
                         </div>
                     ))}
+                </section>
+            )}
+
+            {/* Finished Tournaments Section */}
+            {finishedTournaments.length > 0 && (
+                <section className="container mx-auto px-4 mb-32 relative z-20 space-y-8">
+                    <div className="max-w-5xl mx-auto border-t border-white/5 pt-12">
+                        <h2 className="text-white/30 font-black uppercase tracking-[0.4em] text-xs flex items-center gap-3 mb-8">
+                            <Trophy className="w-4 h-4 text-white/20" />
+                            Archivo de Torneos Finalizados
+                        </h2>
+                    </div>
+                    <div className="grid gap-6 max-w-5xl mx-auto">
+                        {finishedTournaments.map((tournament) => (
+                            <div key={tournament.id} className="group relative overflow-hidden rounded-[2rem] bg-white/[0.02] border border-white/5 p-6 hover:bg-white/[0.05] transition-all duration-500">
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-20 h-20 rounded-2xl overflow-hidden grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700">
+                                            <img
+                                                src={tournament.config.image || "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?q=80&w=2070&auto=format&fit=crop"}
+                                                className="w-full h-full object-cover"
+                                                alt=""
+                                            />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-display font-bold text-xl text-white/60 group-hover:text-white transition-colors">{tournament.config.name}</h3>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-white/20">{tournament.config.date} • {tournament.teams.length} Parejas</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <Link to="/organizador/panel-de-control" onClick={() => setActiveTournament(tournament.id)}>
+                                            <Button variant="ghost" size="sm" className="text-[9px] font-black uppercase tracking-widest border border-white/5 hover:border-primary/50 text-white/40 hover:text-primary">
+                                                Ver Detalles
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </section>
             )}
 
